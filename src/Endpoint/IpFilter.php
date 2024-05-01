@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace Myracloud\WebApi\Endpoint;
 
 
+use DateTime;
+use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
 /**
@@ -16,24 +19,19 @@ class IpFilter extends AbstractEndpoint
     /**
      * @var string
      */
-    protected $epName = 'ipfilter';
+    protected const ENDPOINT = 'ipfilter';
 
     /**
-     * @param      $domain
-     * @param      $type
-     * @param      $value
+     * @param string $domain
+     * @param string $type
+     * @param string $value
      * @param bool $enabled
      * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
+     * @throws Exception
      */
-    public function create(
-        $domain,
-        $type,
-        $value,
-        $enabled = true
-    ) {
-        $uri = $this->uri . '/' . $domain;
-
+    public function create(string $domain, string $type, string $value, bool $enabled = true): array
+    {
         $this->validateIpfilterType($type);
         $options[RequestOptions::JSON] =
             [
@@ -41,24 +39,22 @@ class IpFilter extends AbstractEndpoint
                 'value'   => $value,
                 'enabled' => $enabled,
             ];
-
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('PUT', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse($this->client->request('PUT', static::ENDPOINT . '/' . $domain, $options));
     }
 
 
-    public function update(
-        $domain,
-        $id,
-        \DateTime $modified,
-        $type,
-        $value
-    ) {
-        $uri = $this->uri . '/' . $domain;
-
+    /**
+     * @param string $domain
+     * @param string $id
+     * @param DateTime $modified
+     * @param string $type
+     * @param string $value
+     * @return array
+     * @throws GuzzleException
+     * @throws Exception
+     */
+    public function update(string $domain, string $id, DateTime $modified, string $type, string $value): array
+    {
         $this->validateIpfilterType($type);
         $options[RequestOptions::JSON] =
             [
@@ -67,9 +63,8 @@ class IpFilter extends AbstractEndpoint
                 'type'     => $type,
                 'value'    => $value,
             ];
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('POST', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('POST', static::ENDPOINT . '/' . $domain, $options)
+        );
     }
 }

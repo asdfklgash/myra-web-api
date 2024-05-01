@@ -31,38 +31,37 @@ class WebApi
     /**
      * @var string
      */
-    protected $apiKey = '';
+    protected string $apiKey = '';
     /**
      * @var string
      */
-    protected $secret = '';
+    protected string $secret = '';
     /**
      * @var string
      */
-    protected $site = 'api.myracloud.com';
+    protected string $site = 'api.myracloud.com';
     /**
      * @var string
      */
-    protected $lang = 'en';
+    protected string $lang = 'en';
     /**
      * @var Client
      */
-    protected $client;
+    protected Client $client;
     /**
      * @var array
      */
-    private $endpointCache = [];
+    private array $endpointCache = [];
 
     /**
-     * WebApi constructor.
-     *
-     * @param        $apiKey
-     * @param        $secret
-     * @param null   $site
-     * @param string $lang
-     * @param array  $connectionConfig
+     * @param string $apiKey
+     * @param string $secret
+     * @param string|null $site
+     * @param string|null $lang
+     * @param array $connectionConfig
+     * @param callable|null $requestHandler default is CurlHandler
      */
-    public function __construct($apiKey, $secret, $site = null, $lang = 'en', $connectionConfig = [])
+    public function __construct(string $apiKey, string $secret, ?string $site = null, ?string $lang = 'en', array $connectionConfig = [], ?callable $requestHandler = null)
     {
         $this->apiKey = $apiKey;
         $this->secret = $secret;
@@ -74,22 +73,21 @@ class WebApi
             $this->site = $site;
         }
 
-        $stack = new HandlerStack();
-        $stack->setHandler(new CurlHandler());
+        if (!is_callable($requestHandler))
+            $requestHandler = new CurlHandler();
 
+        $stack = HandlerStack::create($requestHandler);
         $signature = new Signature($secret, $apiKey);
         $stack->push(
             Middleware::mapRequest(
-                function (RequestInterface $request) use ($signature) {
-                    return $signature->signRequest($request);
-                }
+                $signature->signRequest(...)
             )
         );
 
-        $client       = new Client(
+        $client = new Client(
             array_merge(
                 [
-                    'base_uri' => 'https://' . $this->site . '/' . $this->lang . '/rapi',
+                    'base_uri' => 'https://' . $this->site . '/' . $this->lang . '/rapi/',
                     'handler'  => $stack,
                 ],
                 $connectionConfig
@@ -99,103 +97,66 @@ class WebApi
     }
 
     /**
-     * @return Domain
+     * @template T of object
+     * @param class-string<T> $className
+     * @return T the created instance
      */
-    public function getDomainEndpoint()
+    private function getInstance(string $className)
+    {
+        return $this->endpointCache[$className] ??= new $className($this->client);
+    }
+
+    public function getDomainEndpoint(): Domain
     {
         return $this->getInstance(Domain::class);
-
     }
 
-    /**
-     * @param $className
-     * @return mixed
-     */
-    private function getInstance($className)
-    {
-        if (!array_key_exists($className, $this->endpointCache)) {
-            $this->endpointCache[$className] = new $className($this->client);
-        }
-
-        return $this->endpointCache[$className];
-    }
-
-    /**
-     * @return Redirect
-     */
-    public function getRedirectEndpoint()
+    public function getRedirectEndpoint(): Redirect
     {
         return $this->getInstance(Redirect::class);
     }
 
-    /**
-     * @return CacheSetting
-     */
-    public function getCacheSettingsEndpoint()
+    public function getCacheSettingsEndpoint(): CacheSetting
     {
         return $this->getInstance(CacheSetting::class);
     }
 
-    /**
-     * @return Certificate
-     */
-    public function getCertificateEndpoint()
+    public function getCertificateEndpoint(): Certificate
     {
         return $this->getInstance(Certificate::class);
     }
 
-    /**
-     * @return SubdomainSetting
-     */
-    public function getSubdomainSettingsEndpoint()
+    public function getSubdomainSettingsEndpoint(): SubdomainSetting
     {
         return $this->getInstance(SubdomainSetting::class);
     }
 
-    /**
-     * @return DnsRecord
-     */
-    public function getDnsRecordEndpoint()
+    public function getDnsRecordEndpoint(): DnsRecord
     {
         return $this->getInstance(DnsRecord::class);
     }
 
-    /**
-     * @return Statistic
-     */
-    public function getStatisticEndpoint()
+    public function getStatisticEndpoint(): Statistic
     {
         return $this->getInstance(Statistic::class);
     }
 
-    /**
-     * @return Maintenance
-     */
-    public function getMaintenanceEndpoint()
+    public function getMaintenanceEndpoint(): Maintenance
     {
         return $this->getInstance(Maintenance::class);
     }
 
-    /**
-     * @return IpFilter
-     */
-    public function getIpFilterEndpoint()
+    public function getIpFilterEndpoint(): IpFilter
     {
         return $this->getInstance(IpFilter::class);
     }
 
-    /**
-     * @return CacheClear
-     */
-    public function getCacheClearEndpoint()
+    public function getCacheClearEndpoint(): CacheClear
     {
         return $this->getInstance(CacheClear::class);
     }
 
-    /**
-     * @return Networks
-     */
-    public function getNetworksEndpoint()
+    public function getNetworksEndpoint(): Networks
     {
         return $this->getInstance(Networks::class);
     }

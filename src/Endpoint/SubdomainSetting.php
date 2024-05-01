@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Myracloud\WebApi\Endpoint;
 
 
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
 /**
@@ -16,40 +17,33 @@ class SubdomainSetting extends AbstractEndpoint
     /**
      * @var string
      */
-    protected $epName = 'subdomainSetting';
+    protected const ENDPOINT = 'subdomainSetting';
 
 
     /**
-     * @param     $domain
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param string $domain
+     * @return array
+     * @throws GuzzleException
      */
-    public function get($domain)
+    public function get(string $domain): array
     {
-        $uri = $this->uri . '/' . $domain;
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('GET', $uri);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('GET', static::ENDPOINT . '/' . $domain)
+        );
     }
 
     /**
-     * @param $domain
-     * @param $data
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param string $domain
+     * @param array $data
+     * @return array
+     * @throws GuzzleException
      */
-    public function set($domain, array $data)
+    public function set(string $domain, array $data): array
     {
-        $uri = $this->uri . '/' . $domain;
-
         $options[RequestOptions::JSON] = $data;
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('POST', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('POST', static::ENDPOINT . '/' . $domain, $options)
+        );
     }
 
 

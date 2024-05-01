@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\Tests\Endpoint;
 
+use DateTime;
+use GuzzleHttp\Exception\GuzzleException;
+use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\Endpoint\Redirect;
 
 /**
@@ -12,50 +15,45 @@ use Myracloud\WebApi\Endpoint\Redirect;
  */
 class RedirectTest extends AbstractEndpointTest
 {
-    /**
-     * @var Redirect
-     */
-    protected $redirectEndpoint;
+    protected Redirect $redirectEndpoint;
 
-    protected $testData = [
+    protected array $testData = [
         'create' => [
-            'source'        => '/test_source',
-            'destination'   => '/test_dest',
-            'type'          => Redirect::REDIRECT_TYPE_REDIRECT,
+            'source' => '/test_source',
+            'destination' => '/test_dest',
+            'type' => AbstractEndpoint::REDIRECT_TYPE_REDIRECT,
             'subDomainName' => self::TESTDOMAIN . '.',
-            'matchingType'  => Redirect::MATCHING_TYPE_PREFIX,
+            'matchingType' => AbstractEndpoint::MATCHING_TYPE_PREFIX,
         ],
         'update' => [
-            'source'        => '/test_source_changed',
-            'destination'   => '/test_destination_changed',
-            'type'          => Redirect::REDIRECT_TYPE_REDIRECT,
+            'source' => '/test_source_changed',
+            'destination' => '/test_destination_changed',
+            'type' => AbstractEndpoint::REDIRECT_TYPE_REDIRECT,
             'subDomainName' => self::TESTDOMAIN . '.',
-            'matchingType'  => Redirect::MATCHING_TYPE_PREFIX,
+            'matchingType' => AbstractEndpoint::MATCHING_TYPE_PREFIX,
         ],
     ];
 
-    /**
-     *
-     */
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->redirectEndpoint = $this->Api->getRedirectEndpoint();
+        $this->redirectEndpoint = $this->api->getRedirectEndpoint();
         $this->assertThat($this->redirectEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\Redirect'));
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $this->testCreate();
         $list = $this->redirectEndpoint->getList(self::TESTDOMAIN);
         foreach ($list['list'] as $item) {
             if ($item['source'] == $this->testData['create']['source']) {
                 $result = $this->redirectEndpoint->update(
-                    self::TESTDOMAIN, $item['id'],
-                    new \DateTime($item['modified']),
+                    self::TESTDOMAIN,
+                    $item['id'],
+                    new DateTime($item['modified']),
                     $this->testData['update']['source'],
                     $this->testData['update']['destination']
                 );
@@ -68,9 +66,9 @@ class RedirectTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testCreate()
+    public function testCreate(): void
     {
         $this->testDelete();
         $result = $this->redirectEndpoint->create(
@@ -84,9 +82,9 @@ class RedirectTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testDelete()
+    public function testDelete(): void
     {
         $list = $this->redirectEndpoint->getList(self::TESTDOMAIN);
         foreach ($list['list'] as $item) {
@@ -97,7 +95,7 @@ class RedirectTest extends AbstractEndpointTest
                 $result = $this->redirectEndpoint->delete(
                     self::TESTDOMAIN,
                     $item['id'],
-                    new \DateTime($item['modified'])
+                    new DateTime($item['modified'])
                 );
                 $this->verifyNoError($result);
             }
@@ -107,7 +105,7 @@ class RedirectTest extends AbstractEndpointTest
     /**
      *
      */
-    public function testGetList()
+    public function testGetList(): void
     {
         $this->testCreate();
         $result = $this->redirectEndpoint->getList(self::TESTDOMAIN);

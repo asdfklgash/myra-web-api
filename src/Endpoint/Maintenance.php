@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
+use DateTime;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
 /**
@@ -15,72 +17,54 @@ class Maintenance extends AbstractEndpoint
     /**
      * @var string
      */
-    protected $epName = 'maintenance';
+    protected const ENDPOINT = 'maintenance';
 
 
     /**
-     * @param           $domain
-     * @param \DateTime $startDate
-     * @param \DateTime $endDate
-     * @param null      $content
+     * @param string $domain
+     * @param DateTime $startDate
+     * @param DateTime $endDate
+     * @param string|null $content
      * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function create(
-        $domain,
-        \DateTime $startDate,
-        \DateTime $endDate,
-        $content = null
-    ) {
-        $uri = $this->uri . '/' . $domain;
-
+    public function create(string$domain, DateTime $startDate, DateTime $endDate, ?string $content = null): array
+    {
         $options[RequestOptions::JSON] =
             [
                 'content' => $content,
                 'start'   => $startDate->format('c'),
                 'end'     => $endDate->format('c'),
             ];
-
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('PUT', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('PUT', static::ENDPOINT . '/' . $domain, $options)
+        );
     }
 
     /**
-     * @param string      $domain
-     * @param \DateTime   $startDate
-     * @param \DateTime   $endDate
-     * @param string|null $customLabel
-     * @param string|null $customUrl
-     * @param string|null $facebookUrl
-     * @param string|null $twitterUrl
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param string $domain
+     * @param DateTime $startDate
+     * @param DateTime $endDate
+     * @param string $customLabel
+     * @param string $customUrl
+     * @param string $facebookUrl
+     * @param string $twitterUrl
+     * @return array
+     * @throws GuzzleException
      */
-    public function createDefaultPage(
-        $domain,
-        \DateTime $startDate,
-        \DateTime $endDate,
-        $customLabel = null,
-        $customUrl = null,
-        $facebookUrl = null,
-        $twitterUrl = null
-    ) {
-        $uri = $this->uri . '/' . $domain;
-
+    public function createDefaultPage(string $domain, DateTime $startDate, DateTime $endDate, string $customLabel = '', string $customUrl = '', string $facebookUrl = '', string $twitterUrl = ''): array
+    {
         $pageData = [];
-        if ($facebookUrl != null) {
+        if ($facebookUrl !== '') {
             $pageData['facebook'] = $facebookUrl;
         }
-        if ($twitterUrl != null) {
+        if ($twitterUrl !== '') {
             $pageData['twitter'] = $twitterUrl;
         }
-        if ($customLabel != null) {
+        if ($customLabel !== '') {
             $pageData['custom']['label'] = $customLabel;
         }
-        if ($customUrl != null) {
+        if ($customUrl !== '') {
             $pageData['custom']['url'] = $customUrl;
         }
 
@@ -91,32 +75,23 @@ class Maintenance extends AbstractEndpoint
                 'defaultPage' => $pageData,
             ];
 
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('PUT', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('PUT', static::ENDPOINT . '/' . $domain, $options)
+        );
     }
 
     /**
-     * @param           $domain
-     * @param           $id
-     * @param \DateTime $modified
-     * @param \DateTime $startDate
-     * @param \DateTime $endDate
-     * @param null      $content
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param string $domain
+     * @param string $id
+     * @param DateTime $modified
+     * @param DateTime $startDate
+     * @param DateTime $endDate
+     * @param string|null $content
+     * @return array
+     * @throws GuzzleException
      */
-    public function update(
-        $domain,
-        $id,
-        \DateTime $modified,
-        \DateTime $startDate,
-        \DateTime $endDate,
-        $content = null
-    ) {
-        $uri = $this->uri . '/' . $domain;
-
+    public function update(string $domain, string $id, DateTime $modified, DateTime $startDate, DateTime $endDate, ?string $content = null): array
+    {
         $options[RequestOptions::JSON] =
             [
                 'id'       => $id,
@@ -125,10 +100,8 @@ class Maintenance extends AbstractEndpoint
                 'start'    => $startDate->format('c'),
                 'end'      => $endDate->format('c'),
             ];
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('POST', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('POST', static::ENDPOINT . '/' . $domain, $options)
+        );
     }
 }

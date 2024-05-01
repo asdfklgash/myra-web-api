@@ -5,3 +5,5 @@
 /tests/Config.php
 /.vagrant
 /export_*
+/tests/.cache
+/tests/report

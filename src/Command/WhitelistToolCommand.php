@@ -3,38 +3,35 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Command;
 
+use Exception;
 use GuzzleHttp\Exception\TransferException;
 use IPTools\IP;
 use IPTools\Network;
-use Myracloud\WebApi\Endpoint\AbstractEndpoint;
-use Myracloud\WebApi\WebApi;
+use Myracloud\WebApi\Endpoint\Networks;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class WhitelistToolCommand extends AbstractCommand
 {
-    const FORMAT_IPTABLES  = 'iptables';
-    const FORMAT_IP6TABLES = 'ip6tables';
-    const FORMAT_IPSET     = 'ipset';
-    const FORMAT_NFTABLES  = 'nftables';
+    private const FORMAT_IPTABLES  = 'iptables';
+    private const FORMAT_IP6TABLES = 'ip6tables';
+    private const FORMAT_IPSET     = 'ipset';
+    private const FORMAT_NFTABLES  = 'nftables';
     /**
      * @var array
      */
-    protected $formats = [
+    protected array $formats = [
         self::FORMAT_IPTABLES,
         self::FORMAT_IP6TABLES,
         self::FORMAT_IPSET,
         self::FORMAT_NFTABLES,
     ];
 
-    /** @var WebApi */
-    protected $webapi;
-
     /**
      *
      */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName('myracloud:tools:gen-whitelist');
@@ -60,16 +57,16 @@ TAG
     }
 
     /**
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return int
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $options  = $this->resolveOptions($input, $output);
             $endpoint = $this->getEndpoint();
-            $data     = $endpoint->getList(null);
+            $data     = $endpoint->getList();
             $output->writeln(
                 [
                     '######################################################',
@@ -95,34 +92,36 @@ TAG
         } catch (TransferException $e) {
             $this->handleTransferException($e, $output);
 
-            return;
-        } catch (\Exception $e) {
+            return self::FAILURE;
+        } catch (Exception $e) {
             $output->writeln('<fg=red;options=bold>Error:</>' . $e->getMessage());
 
-            return;
+            return self::FAILURE;
         }
+
+        return self::SUCCESS;
     }
 
     /**
      * @param InputInterface  $input
      * @param OutputInterface $output
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
-    protected function resolveOptions(InputInterface $input, OutputInterface $output)
+    protected function resolveOptions(InputInterface $input, OutputInterface $output): array
     {
         $options = parent::resolveOptions($input, $output);
         if (!in_array($options['format'], $this->formats)) {
-            throw new \Exception('--format must be one of: ' . implode(',', $this->formats));
+            throw new Exception('--format must be one of: ' . implode(',', $this->formats));
         }
 
         return $options;
     }
 
     /**
-     * @return AbstractEndpoint
+     * @return Networks
      */
-    protected function getEndpoint(): AbstractEndpoint
+    protected function getEndpoint(): Networks
     {
         return $this->webapi->getNetworksEndpoint();
     }
@@ -131,7 +130,7 @@ TAG
      * @param array $data
      * @return array
      */
-    private function renderIpTables(array $data)
+    private function renderIpTables(array $data): array
     {
         $lines = ['iptables -N myrawhite4'];
         foreach ($data as $entry) {
@@ -150,7 +149,7 @@ TAG
      * @param array $data
      * @return array
      */
-    private function renderIp6Tables(array $data)
+    private function renderIp6Tables(array $data): array
     {
         $lines = ['ip6tables -N myrawhite6'];
         foreach ($data as $entry) {
@@ -169,7 +168,7 @@ TAG
      * @param array $data
      * @return array
      */
-    private function renderIpSet(array $data)
+    private function renderIpSet(array $data): array
     {
         $v4 = ['create -exist myrawhite4 hash:net family inet hashsize 1024 maxelem 65536 comment'];
         $v6 = ['create -exist myrawhite6 hash:net family inet6 hashsize 1024 maxelem 65536 comment'];
@@ -185,12 +184,10 @@ TAG
             }
         }
 
-        $lines = array_merge($v4, [''], $v6);
-
-        return $lines;
+        return array_merge($v4, [''], $v6);
     }
 
-    private function renderNFTSet(array $data)
+    private function renderNFTSet(array $data): array
     {
 
         $v4   = ['nft add table ip filter'];
@@ -212,8 +209,6 @@ TAG
         $v4[] = 'nft add rule ip filter myrawhite4 counter return';
         $v6[] = 'nft add rule ip6 filter myrawhite6 counter return';
 
-        $lines = array_merge($v4, [''], $v6);
-
-        return $lines;
+        return array_merge($v4, [''], $v6);
     }
 }

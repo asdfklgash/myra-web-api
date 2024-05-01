@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Myracloud\Tests\Endpoint;
 
+use GuzzleHttp\Exception\GuzzleException;
 use Myracloud\WebApi\Endpoint\SubdomainSetting;
 
 class SubdomainSettingTest extends AbstractEndpointTest
 {
-    /** @var SubdomainSetting */
-    protected $subdomainSettingEndpoint;
-    protected $someKeys = [
+    protected SubdomainSetting $subdomainSettingEndpoint;
+    protected array $someKeys = [
         'accept_encoding',
         'access_log',
         'antibot_post_flood',
@@ -87,17 +87,14 @@ class SubdomainSettingTest extends AbstractEndpointTest
     /**
      *
      */
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->subdomainSettingEndpoint = $this->Api->getSubdomainSettingsEndpoint();
+        $this->subdomainSettingEndpoint = $this->api->getSubdomainSettingsEndpoint();
         $this->assertThat($this->subdomainSettingEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\SubdomainSetting'));
     }
 
-    /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     */
-    public function testGet()
+    public function testGet(): void
     {
         $result = $this->subdomainSettingEndpoint->getList(self::TESTDOMAIN);
         var_dump($result);
@@ -105,13 +102,13 @@ class SubdomainSettingTest extends AbstractEndpointTest
         $this->assertArrayHasKey('targetObject', $result);
         $this->assertGreaterThan(0, count($result['targetObject']));
 
-        $this->verifyTargetObject($result, 'SubdomainSettingVO');;
+        $this->verifyTargetObject($result, 'SubdomainSettingVO');
         foreach ($this->someKeys as $item) {
             $this->assertArrayHasKey($item, $result['targetObject'][0]);
         }
     }
 
-    public function testSet()
+    public function testSet(): void
     {
         $data = [
             'cdn' => true,

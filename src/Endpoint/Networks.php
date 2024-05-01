@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
+use GuzzleHttp\Exception\GuzzleException;
+
 /**
  * Class Networks
  *
@@ -13,20 +15,17 @@ class Networks extends AbstractEndpoint
     /**
      * @var string
      */
-    protected $epName = 'networks';
+    protected const ENDPOINT = 'networks';
 
     /**
-     * @param       $domain
-     * @param int   $page
+     * @param string|null $domain
+     * @param int $page
      * @param array $params
-     * @return mixed
+     * @return array
+     * @throws GuzzleException
      */
-    public function getList($domain = null, $page = 1, array $params = [])
+    public function getList(?string $domain = null, int $page = 1, array $params = []): array
     {
-        $uri = $this->uri;
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->get($uri, ['query' => $params]);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse($this->client->get(static::ENDPOINT . '/' . $page, ['query' => $params]));
     }
 }

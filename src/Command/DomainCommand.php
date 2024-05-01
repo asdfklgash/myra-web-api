@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace Myracloud\WebApi\Command;
 
 
-use Myracloud\WebApi\Endpoint\AbstractEndpoint;
+use DateTime;
+use GuzzleHttp\Exception\GuzzleException;
 use Myracloud\WebApi\Endpoint\Domain;
+use RuntimeException;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -17,11 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class DomainCommand extends AbstractCrudCommand
 {
-
-    /**
-     *
-     */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName('myracloud:api:domain');
@@ -52,7 +50,7 @@ TAG
      * @param array           $options
      * @param OutputInterface $output
      */
-    protected function OpList(array $options, OutputInterface $output)
+    protected function OpList(array $options, OutputInterface $output): void
     {
         $options['fqdn'] = null;
 
@@ -62,16 +60,15 @@ TAG
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return void
+     * @throws GuzzleException
      */
-    protected function OpCreate(array $options, OutputInterface $output)
+    protected function OpCreate(array $options, OutputInterface $output): void
     {
-        /** @var Domain $endpoint */
         $endpoint = $this->getEndpoint();
 
         if ($options['name'] == null) {
-            throw new \RuntimeException('You need to define a domain name via --name');
+            throw new RuntimeException('You need to define a domain name via --name');
         }
         if ($options['autoupdate'] == null) {
             $options['autoupdate'] = true;
@@ -86,9 +83,9 @@ TAG
     }
 
     /**
-     * @return AbstractEndpoint
+     * @return Domain
      */
-    protected function getEndpoint(): AbstractEndpoint
+    protected function getEndpoint(): Domain
     {
         return $this->webapi->getDomainEndpoint();
     }
@@ -97,7 +94,7 @@ TAG
      * @param                 $data
      * @param OutputInterface $output
      */
-    protected function writeTable($data, OutputInterface $output)
+    protected function writeTable($data, OutputInterface $output): void
     {
         $table = new Table($output);
         $table->setHeaders([
@@ -133,13 +130,12 @@ TAG
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return void
+     * @throws GuzzleException
      */
-    protected function OpUpdate(array $options, OutputInterface $output)
+    protected function OpUpdate(array $options, OutputInterface $output): void
     {
         $options['fqdn'] = null;
-        /** @var Domain $endpoint */
         $endpoint = $this->getEndpoint();
         $existing = $this->findById($options);
 
@@ -148,7 +144,7 @@ TAG
         }
         $return = $endpoint->update(
             $options['id'],
-            new \DateTime($existing['modified']),
+            new DateTime($existing['modified']),
             boolval($options['autoupdate'])
         );
 
@@ -158,18 +154,18 @@ TAG
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    protected function OpDelete(array $options, OutputInterface $output)
+    protected function OpDelete(array $options, OutputInterface $output): void
     {
         $options['fqdn'] = null;
         if ($options['id'] == null) {
-            throw new \RuntimeException('You need to define the id of the object to delete via --id');
+            throw new RuntimeException('You need to define the id of the object to delete via --id');
         }
         $existing = $this->findById($options);
 
         $endpoint = $this->getEndpoint();
-        $return   = $endpoint->delete($existing['name'], $options['id'], new \DateTime($existing['modified']));
+        $return   = $endpoint->delete($existing['name'], $options['id'], new DateTime($existing['modified']));
         $this->handleDeleteReturn($return, $output);
     }
 }

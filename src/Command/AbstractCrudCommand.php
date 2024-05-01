@@ -4,8 +4,12 @@ declare(strict_types=1);
 namespace Myracloud\WebApi\Command;
 
 
+use DateTime;
+use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\TransferException;
-use Myracloud\WebApi\Endpoint\AbstractEndpoint;
+use RuntimeException;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -14,30 +18,12 @@ use Symfony\Component\Yaml\Yaml;
 
 abstract class AbstractCrudCommand extends AbstractCommand
 {
-    /**
-     *
-     */
-    const OPERATION_CREATE = 'create';
-    /**
-     *
-     */
-    const OPERATION_DELETE = 'delete';
-    /**
-     *
-     */
-    const OPERATION_LIST = 'list';
-    /**
-     *
-     */
-    const OPERATION_UPDATE = 'update';
-    /**
-     *
-     */
-    const OPERATION_EXPORT = 'export';
-    /**
-     * @var array
-     */
-    static $operations = [
+    protected const OPERATION_CREATE = 'create';
+    protected const OPERATION_DELETE = 'delete';
+    protected const OPERATION_LIST = 'list';
+    protected const OPERATION_UPDATE = 'update';
+    protected const OPERATION_EXPORT = 'export';
+    protected static array $operations = [
         self::OPERATION_UPDATE,
         self::OPERATION_CREATE,
         self::OPERATION_DELETE,
@@ -45,10 +31,7 @@ abstract class AbstractCrudCommand extends AbstractCommand
         self::OPERATION_EXPORT,
     ];
 
-    /**
-     *
-     */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->addOption('operation', 'o', InputOption::VALUE_REQUIRED, '', self::OPERATION_LIST);
@@ -58,11 +41,12 @@ abstract class AbstractCrudCommand extends AbstractCommand
     }
 
     /**
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return int
+     * @throws GuzzleException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $options = $this->resolveOptions($input, $output);
@@ -70,7 +54,7 @@ abstract class AbstractCrudCommand extends AbstractCommand
             if (!in_array($options['operation'], self::$operations)) {
                 $output->writeln('<fg=red;options=bold>Error:</> --operation must be one of ' . implode(',', self::$operations));
 
-                return;
+                return Command::INVALID;
             }
             switch ($options['operation']) {
                 case self::OPERATION_LIST:
@@ -92,19 +76,21 @@ abstract class AbstractCrudCommand extends AbstractCommand
         } catch (TransferException $e) {
             $this->handleTransferException($e, $output);
 
-            return;
-        } catch (\Exception $e) {
+            return Command::FAILURE;
+        } catch (Exception $e) {
             $output->writeln('<fg=red;options=bold>Error:</>' . $e->getMessage());
 
-            return;
+            return Command::FAILURE;
         }
+
+        return Command::SUCCESS;
     }
 
     /**
      * @param array           $options
      * @param OutputInterface $output
      */
-    protected function OpList(array $options, OutputInterface $output)
+    protected function OpList(array $options, OutputInterface $output): void
     {
         $endpoint = $this->getEndpoint();
         $return   = $endpoint->getList($options['fqdn'], $options['page']);
@@ -119,37 +105,35 @@ abstract class AbstractCrudCommand extends AbstractCommand
      * @param                 $data
      * @param OutputInterface $output
      */
-    abstract protected function writeTable($data, OutputInterface $output);
+    abstract protected function writeTable($data, OutputInterface $output): void;
 
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @return mixed
      */
-    abstract protected function OpCreate(array $options, OutputInterface $output);
+    abstract protected function OpCreate(array $options, OutputInterface $output): void;
 
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @return mixed
      */
-    abstract protected function OpUpdate(array $options, OutputInterface $output);
+    abstract protected function OpUpdate(array $options, OutputInterface $output): void;
 
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    protected function OpDelete(array $options, OutputInterface $output)
+    protected function OpDelete(array $options, OutputInterface $output): void
     {
         if ($options['id'] == null) {
-            throw new \RuntimeException('You need to define the id of the object to delete via --id');
+            throw new RuntimeException('You need to define the id of the object to delete via --id');
         }
 
         $endpoint = $this->getEndpoint();
         $existing = $this->findById($options);
 
-        $return = $endpoint->delete($options['fqdn'], $options['id'], new \DateTime($existing['modified']));
+        $return = $endpoint->delete($options['fqdn'], $options['id'], new DateTime($existing['modified']));
         $this->handleDeleteReturn($return, $output);
     }
 
@@ -157,10 +141,10 @@ abstract class AbstractCrudCommand extends AbstractCommand
      * @param array $options
      * @return array
      */
-    protected function findById(array $options)
+    protected function findById(array $options): array
     {
         if ($options['id'] == null) {
-            throw new \RuntimeException('You need to define the id of the object via --id');
+            throw new RuntimeException('You need to define the id of the object via --id');
         }
         $endpoint = $this->getEndpoint();
         $return   = $endpoint->getList($options['fqdn'], $options['page']);
@@ -169,7 +153,7 @@ abstract class AbstractCrudCommand extends AbstractCommand
                 return $item;
             }
         }
-        throw new \RuntimeException('Could not find an object with the passed id.');
+        throw new RuntimeException('Could not find an object with the passed id.');
     }
 
     /**
@@ -193,19 +177,19 @@ abstract class AbstractCrudCommand extends AbstractCommand
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @throws \Exception
+     * @throws Exception
      */
-    protected function OpExport(array $options, OutputInterface $output)
+    protected function OpExport(array $options, OutputInterface $output): void
     {
-        $date     = new \DateTime();
+        $date     = new DateTime();
         $endpoint = $this->getEndpoint();
         $return   = $endpoint->getList($options['fqdn'], $options['page']);
         $this->checkResult($return, $output);
         $yaml     = Yaml::dump($return['list']);
         $header   = '# ' . $options['fqdn'] . "\n";
-        $header   .= '# ' . $endpoint->getName() . "\n";
+        $header   .= '# ' . $endpoint->getEndPoint() . "\n";
         $header   .= '# ' . $date->format('c') . "\n";
-        $filename = 'export_' . $endpoint->getName() . '_' . str_replace(':', '-', $options['fqdn']) . '_' . $date->format('Ymd_His') . '.yml';
+        $filename = 'export_' . $endpoint->getEndPoint() . '_' . str_replace(':', '-', $options['fqdn']) . '_' . $date->format('Ymd_His') . '.yml';
         file_put_contents($filename, $header . $yaml);
         $output->writeln('Exported ' . count($return['list']) . ' entries to ' . $filename);
     }

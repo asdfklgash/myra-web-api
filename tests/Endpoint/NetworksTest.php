@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace Myracloud\Tests\Endpoint;
 
 use Myracloud\WebApi\Endpoint\Networks;
-use Myracloud\WebApi\Endpoint\Redirect;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Class NetworksTest
@@ -14,26 +12,19 @@ use PHPUnit\Framework\TestCase;
  */
 class NetworksTest extends AbstractEndpointTest
 {
+    protected Networks $networksEndpoint;
 
-    /**
-     * @var Networks
-     */
-    protected $networksEndpoint;
-
-    /**
-     *
-     */
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->networksEndpoint = $this->Api->getNetworksEndpoint();
+        $this->networksEndpoint = $this->api->getNetworksEndpoint();
         $this->assertThat($this->networksEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\Networks'));
     }
 
     /**
      *
      */
-    public function testGetList()
+    public function testGetList(): void
     {
         $list = $this->networksEndpoint->getList(self::TESTDOMAIN);
         $this->verifyNoError($list);

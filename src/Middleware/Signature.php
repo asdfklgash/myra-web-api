@@ -12,87 +12,97 @@ use Psr\Http\Message\RequestInterface;
  */
 class Signature
 {
-    /**
-     * @var null|string
-     */
-    private $secret;
-    /**
-     * @var null|string
-     */
-    private $apiKey;
-    /**
-     * @var false|string
-     */
-    private $date;
-    /**
-     * @var string
-     */
-    private $contentType = 'application/json';
+    private string $date;
+    private const CONTENT_TYPE = 'application/json';
+    private const SIG_KEY = 'MYRA';
+    private const SIG_REQUEST_PAYLOAD = 'myra-api-request';
+    private const ALGO_KEY = 'sha256';
+    private const ALGO_SIG = 'sha512';
 
     /**
-     * @param null|string $secret
-     * @param null        $apiKey
+     * @param string $secret
+     * @param string $apiKey
      */
-    public function __construct($secret = null, $apiKey = null)
-    {
-        $this->secret = $secret;
-        $this->apiKey = $apiKey;
-        $this->date   = date('c');
+    public function __construct(
+        private string $secret,
+        private string $apiKey
+    ) {
+        $this->date = trim(date(DATE_RFC3339));
     }
 
     /**
      * @param RequestInterface $request
      * @return RequestInterface
      */
-    public function signRequest(RequestInterface $request)
+    public function signRequest(RequestInterface $request): RequestInterface
     {
-        $request = $request->withHeader('Content-Type', $this->contentType);
+        $signature = $this->generateSignature($request);
+        $request = $request->withHeader('Content-Type', self::CONTENT_TYPE);
         $request = $request->withHeader('Date', $this->date);
-
-        $signingString = $this->getStringToSign($request);
-
-        $request = $request->withHeader('Authorization', $this->getSignature($signingString));
-
-        return $request;
+        return $request->withHeader('Authorization', sprintf(self::SIG_KEY.' %s:%s', trim($this->apiKey), $signature));
     }
 
     /**
-     * Return unsigned string representation of the signature data
-     *
      * @param RequestInterface $request
      * @return string
      */
-    public function getStringToSign(RequestInterface $request)
+    private function generateSignature(RequestInterface $request): string
     {
-        $uri = $request->getUri();
+        $dateKey = hash_hmac(self::ALGO_KEY, $this->date, self::SIG_KEY . trim($this->secret));
+        $signingKey = hash_hmac(self::ALGO_KEY, self::SIG_REQUEST_PAYLOAD, $dateKey);
 
-        $signUri = $uri->getPath();
-        if (!empty($uri->getQuery())) {
-            $signUri .= '?' . $uri->getQuery();
-        }
-
-        return
-            implode('#', [
-                md5($request->getBody()->getContents()),
-                $request->getMethod(),
-                $signUri,
-                $this->contentType,
-                $this->date,
-            ]);
+        $signingString = $this->generateSigningSignature($request);
+        $signature = hash_hmac(self::ALGO_SIG, $signingString, $signingKey, true);
+        return base64_encode($signature);
     }
 
     /**
-     * Return signature as string
-     *
-     * @param $signingString
+     * @param RequestInterface $request
      * @return string
      */
-    public function getSignature($signingString)
+    private function generateSigningSignature(RequestInterface $request): string
     {
-        $key       = hash_hmac('sha256', $this->date, 'MYRA' . $this->secret);
-        $key       = hash_hmac('sha256', 'myra-api-request', $key);
-        $signature = base64_encode(hash_hmac('sha512', $signingString, $key, true));
+        $bodyHash = $this->getRequestBodyHash($request);
+        $requestMethod = $this->getRequestMethod($request);
+        $path = $this->getRequestPath($request);
 
-        return "MYRA " . $this->apiKey . ":" . $signature;
+        return sprintf('%s#%s#%s#%s#%s', $bodyHash, $requestMethod, $path, self::CONTENT_TYPE, $this->date);
+    }
+
+    /**
+     * @param RequestInterface $request
+     * @return string
+     */
+    private function getRequestBodyHash(RequestInterface $request): string
+    {
+        $body = trim($request->getBody()->getContents());
+        if (empty($body))
+            return 'd41d8cd98f00b204e9800998ecf8427e'; // empty md5 hash
+
+        return md5($body);
+    }
+
+    /**
+     * @param RequestInterface $request
+     * @return string
+     */
+    private function getRequestMethod(RequestInterface $request): string
+    {
+        return trim(strtoupper($request->getMethod()));
+    }
+
+    /**
+     * @param RequestInterface $request
+     * @return string
+     */
+    private function getRequestPath(RequestInterface $request): string
+    {
+        $uri = $request->getUri();
+        $path = $uri->getPath();
+        if (!empty($uri->getQuery())) {
+            $path .= '?' . $uri->getQuery();
+        }
+
+        return trim($path);
     }
 }

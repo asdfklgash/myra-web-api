@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\Tests\Endpoint;
 
+use DateInterval;
+use DateTime;
+use GuzzleHttp\Exception\GuzzleException;
 use Myracloud\WebApi\Endpoint\Maintenance;
 
 /**
@@ -13,22 +16,22 @@ use Myracloud\WebApi\Endpoint\Maintenance;
 class MaintenanceTest extends AbstractEndpointTest
 {
     /** @var Maintenance */
-    protected $maintenanceEndpoint;
+    protected Maintenance $maintenanceEndpoint;
 
-    protected $testData = [
-        'create'  => [
-            'fqdn'    => self::TESTDOMAIN,
+    protected array $testData = [
+        'create' => [
+            'fqdn' => self::TESTDOMAIN,
             'content' => 'Maintenance Page',
-            'active'  => true,
+            'active' => true,
         ],
-        'update'  => [
-            'fqdn'    => self::TESTDOMAIN,
+        'update' => [
+            'fqdn' => self::TESTDOMAIN,
             'content' => 'Maintenande Page changed',
         ],
         'default' => [
-            'label'    => 'aaaaaaaaaaaaaaaa',
-            'value'    => 'bbbbbbbbbbbbbbbb',
-            'twitter'  => 'cccccccccccccccc',
+            'label' => 'aaaaaaaaaaaaaaaa',
+            'value' => 'bbbbbbbbbbbbbbbb',
+            'twitter' => 'cccccccccccccccc',
             'facebook' => 'dddddddddddddddd',
         ],
     ];
@@ -37,32 +40,32 @@ class MaintenanceTest extends AbstractEndpointTest
     /**
      *
      */
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->maintenanceEndpoint = $this->Api->getMaintenanceEndpoint();
+        $this->maintenanceEndpoint = $this->api->getMaintenanceEndpoint();
         $this->assertThat($this->maintenanceEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\Maintenance'));
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $this->testCreate();
         $list = $this->maintenanceEndpoint->getList(self::TESTDOMAIN);
 
         foreach ($list['list'] as $item) {
             if ($item['content'] == $this->testData['create']['content']) {
-                $start = new \DateTime($item['start']);
-                $start->add(new \DateInterval('P7D'));
-                $end = new \DateTime($item['end']);
-                $end->add(new \DateInterval('P11D'));
+                $start = new DateTime($item['start']);
+                $start->add(new DateInterval('P7D'));
+                $end = new DateTime($item['end']);
+                $end->add(new DateInterval('P11D'));
 
                 $result = $this->maintenanceEndpoint->update(
                     self::TESTDOMAIN,
                     $item['id'],
-                    new \DateTime(),
+                    new DateTime(),
                     $start,
                     $end,
                     $this->testData['update']['content']
@@ -76,14 +79,14 @@ class MaintenanceTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testCreate()
+    public function testCreate(): void
     {
         $this->testDelete();
-        $endDate   = new \DateTime();
+        $endDate = new DateTime();
         $startDate = clone $endDate;
-        $startDate->sub(new \DateInterval('P1D'));
+        $startDate->sub(new DateInterval('P1D'));
 
         $result = $this->maintenanceEndpoint->create(
             self::TESTDOMAIN,
@@ -98,9 +101,9 @@ class MaintenanceTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testDelete()
+    public function testDelete(): void
     {
         $list = $this->maintenanceEndpoint->getList(self::TESTDOMAIN);
 
@@ -108,15 +111,15 @@ class MaintenanceTest extends AbstractEndpointTest
             $res = $this->maintenanceEndpoint->delete(
                 self::TESTDOMAIN,
                 $item['id'],
-                new \DateTime($item['modified'])
+                new DateTime($item['modified'])
             );
         }
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testGetList()
+    public function testGetList(): void
     {
         $this->testCreate();
         $result = $this->maintenanceEndpoint->getList(self::TESTDOMAIN);
@@ -124,14 +127,14 @@ class MaintenanceTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testCreateDefault()
+    public function testCreateDefault(): void
     {
         $this->testDelete();
-        $endDate   = new \DateTime();
+        $endDate = new DateTime();
         $startDate = clone $endDate;
-        $startDate->sub(new \DateInterval('P1D'));
+        $startDate->sub(new DateInterval('P1D'));
 
         $result = $this->maintenanceEndpoint->createDefaultPage(
             self::TESTDOMAIN,

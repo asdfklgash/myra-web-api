@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
+use DateTime;
+use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
 /**
@@ -12,32 +15,22 @@ use GuzzleHttp\RequestOptions;
  */
 class DnsRecord extends AbstractEndpoint
 {
-    /**
-     * @var string
-     */
-    protected $epName = 'dnsRecords';
+    protected const ENDPOINT = 'dnsRecords';
 
     /**
-     * @param      $domain
-     * @param int  $page
-     * @param null $search
-     * @param null $recordType
+     * @param ?string $domain
+     * @param int $page
+     * @param string|null $search
+     * @param string|null $recordType
      * @param bool $activeOnly
-     * @param bool $loadbalancedOnly
+     * @param bool $loadBalancedOnly
      * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
+     * @throws Exception
      */
-    public function getList(
-        $domain,
-        $page = 1,
-        $search = null,
-        $recordType = null,
-        $activeOnly = false,
-        $loadbalancedOnly = false
-    ) {
+    public function getList(?string $domain = null, int $page = 1, ?string $search = null, ?string $recordType = null, bool $activeOnly = false, bool $loadBalancedOnly = false): array
+    {
         $options = [];
-        $uri     = $this->uri . '/' . $domain . '/' . $page;
-
         if (!empty($search)) {
             $options[RequestOptions::QUERY]['search'] = $search;
         }
@@ -45,46 +38,34 @@ class DnsRecord extends AbstractEndpoint
             $this->validateDnsType($recordType);
             $options[RequestOptions::QUERY]['recordTypes'] = $recordType;
         }
-        if ($activeOnly == true) {
+        if ($activeOnly) {
             $options[RequestOptions::QUERY]['activeOnly'] = 'true';
         }
-        if ($loadbalancedOnly == true) {
+        if ($loadBalancedOnly) {
             $options[RequestOptions::QUERY]['loadbalancer'] = 'true';
         }
 
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('GET', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('GET', static::ENDPOINT . '/' . $domain . '/' . $page, $options)
+        );
     }
 
     /**
-     * @param        $domain
-     * @param        $subdomain
-     * @param        $ipAddress
-     * @param        $ttl
+     * @param string $domain
+     * @param string $subdomain
+     * @param string $ipAddress
+     * @param int $ttl
      * @param string $recordType
-     * @param bool   $active
-     * @param null   $sslCertTemplate
-     * @param bool   $enabled
+     * @param bool $active
+     * @param string $sslCertTemplate
+     * @param bool $enabled
      * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
+     * @throws Exception
      */
-    public function create(
-        $domain,
-        $subdomain,
-        $ipAddress,
-        $ttl,
-        $recordType = 'A',
-        $active = true,
-        $sslCertTemplate = null,
-        $enabled = true
-    ) {
-        $uri = $this->uri . '/' . $domain;
-
-
+    public function create(string $domain, string $subdomain, string $ipAddress, int $ttl, string $recordType = self::DNS_TYPE_A, bool $active = true, string $sslCertTemplate = '', bool $enabled = true): array
+    {
         $this->validateDnsType($recordType);
-
         $options[RequestOptions::JSON] =
             [
                 'name'       => $subdomain,
@@ -94,47 +75,33 @@ class DnsRecord extends AbstractEndpoint
                 'active'     => $active,
                 'enabled'    => $enabled,
             ];
-
-        if ($sslCertTemplate != null) {
+        if ($sslCertTemplate !== '') {
             $options[RequestOptions::JSON]['sslCertTemplate'] = $sslCertTemplate;
         }
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('PUT', $uri, $options);
 
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('PUT', static::ENDPOINT . '/' . $domain, $options)
+        );
     }
 
     /**
-     * @param           $domain
-     * @param           $id
-     * @param \DateTime $modified
-     * @param           $subdomain
-     * @param           $ipAddress
-     * @param           $ttl
-     * @param string    $recordType
-     * @param bool      $active
-     * @param null      $sslCertTemplate
-     * @param bool      $enabled
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param string $domain
+     * @param string $id
+     * @param DateTime $modified
+     * @param string $subdomain
+     * @param string $ipAddress
+     * @param int $ttl
+     * @param string $recordType
+     * @param bool $active
+     * @param string $sslCertTemplate
+     * @param bool $enabled
+     * @return array
+     * @throws GuzzleException
+     * @throws Exception
      */
-    public function update(
-        $domain,
-        $id,
-        \DateTime $modified,
-        $subdomain,
-        $ipAddress,
-        $ttl,
-        $recordType = 'A',
-        $active = true,
-        $sslCertTemplate = null,
-        $enabled = true
-    ) {
-
-        $uri = $this->uri . '/' . $domain;
-
+    public function update(string $domain, string $id, DateTime $modified, string $subdomain, string $ipAddress, int $ttl, string $recordType = self::DNS_TYPE_A, bool $active = true, string $sslCertTemplate = '', bool $enabled = true): array
+    {
         $this->validateDnsType($recordType);
-
         $options[RequestOptions::JSON] =
             [
                 "id"         => $id,
@@ -146,12 +113,11 @@ class DnsRecord extends AbstractEndpoint
                 'active'     => $active,
                 'enabled'    => $enabled,
             ];
-        if ($sslCertTemplate != null) {
+        if ($sslCertTemplate !== '') {
             $options[RequestOptions::JSON]['sslCertTemplate'] = $sslCertTemplate;
         }
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('POST', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('POST', static::ENDPOINT . '/' . $domain, $options)
+        );
     }
 }

@@ -12,12 +12,9 @@ use Myracloud\WebApi\Endpoint\Certificate;
  */
 class CertificateTest extends AbstractEndpointTest
 {
+    protected Certificate $certificateEndpoint;
 
-    /** @var Certificate */
-    protected $certificateEndpoint;
-
-
-    protected $testData = [
+    protected array $testData = [
         'create' => [
         ],
     ];
@@ -25,23 +22,23 @@ class CertificateTest extends AbstractEndpointTest
     /**
      *
      */
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->certificateEndpoint = $this->Api->getCertificateEndpoint();
+        $this->certificateEndpoint = $this->api->getCertificateEndpoint();
         $this->assertThat($this->certificateEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\Certificate'));
     }
 
     /**
      *
      */
-    public function testGetList()
+    public function testGetList(): void
     {
         $list = $this->certificateEndpoint->getList(self::TESTDOMAIN);
         var_dump($list);
     }
 
-    public function testCreate()
+    public function testCreate(): void
     {
         $list = $this->certificateEndpoint->create(self::TESTDOMAIN);
         var_dump($list);

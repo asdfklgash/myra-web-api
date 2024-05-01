@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
-declare(strict_types=1);
+
+require __DIR__ . '/../vendor/autoload.php';
 
 use Myracloud\WebApi\Command\CacheClearCommand;
 use Myracloud\WebApi\Command\CacheSettingCommand;
@@ -11,14 +12,12 @@ use Myracloud\WebApi\Command\MaintenanceCommand;
 use Myracloud\WebApi\Command\RedirectCommand;
 use Myracloud\WebApi\Command\SubdomainCommand;
 use Myracloud\WebApi\Command\WhitelistToolCommand;
+use Symfony\Component\Console\Application;
 
 define('ROOTDIR', realpath(__DIR__ . DIRECTORY_SEPARATOR . '..'));
 
-require_once(ROOTDIR . '/vendor/autoload.php');
-
-set_time_limit(0);
-$app = new Symfony\Component\Console\Application('Myra Web-API');
-$app->addCommands([
+$application = new Application();
+$application->addCommands([
     new CacheClearCommand(),
     new CacheSettingCommand(),
     new MaintenanceCommand(),
@@ -29,4 +28,4 @@ $app->addCommands([
     new SubdomainCommand(),
     new WhitelistToolCommand(),
 ]);
-$app->run();
+$application->run();

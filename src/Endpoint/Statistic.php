@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
+use DateTime;
+use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
 /**
@@ -15,34 +18,30 @@ class Statistic extends AbstractEndpoint
     /**
      * @var string
      */
-    protected $epName = 'statistic';
+    protected const ENDPOINT = 'statistic';
 
     /**
-     * @param $domain
-     * @param $id
-     * @param $modified
-     * @return mixed
-     * @throws \Exception
+     * @param string $domain
+     * @param string $id
+     * @param DateTime $modified
+     * @return array
+     * @throws Exception
      */
-    public function delete($domain, $id, \DateTime $modified)
+    public function delete(string $domain, string $id, DateTime $modified): array
     {
-        throw new \Exception('Delete is not supported on ' . __CLASS__);
+        throw new Exception('Delete is not supported on ' . __CLASS__);
     }
 
     /**
-     * @param $query
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param array $query
+     * @return array
+     * @throws GuzzleException
      */
-    public function query($query)
+    public function query(array $query): array
     {
-        $uri = $this->uri . '/query';
-
         $options[RequestOptions::JSON] = $query;
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('POST', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('POST', static::ENDPOINT . '/query', $options)
+        );
     }
 }

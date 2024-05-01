@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Myracloud\Tests\Endpoint;
 
+use DateTime;
+use GuzzleHttp\Exception\GuzzleException;
 use Myracloud\WebApi\Endpoint\Domain;
 
 /**
@@ -12,23 +14,20 @@ use Myracloud\WebApi\Endpoint\Domain;
  */
 class DomainTest extends AbstractEndpointTest
 {
-    /**
-     * @var Domain
-     */
-    protected $domainEndpoint;
+    protected Domain $domainEndpoint;
 
-    protected $testData = [
+    protected array $testData = [
         'create' => [
-            'name'        => self::TESTDOMAIN,
+            'name' => self::TESTDOMAIN,
             'maintenance' => false,
-            'paused'      => false,
-            'autoUpdate'  => false,
-            'owned'       => true,
-            'reversed'    => false,
+            'paused' => false,
+            'autoUpdate' => false,
+            'owned' => true,
+            'reversed' => false,
             'environment' => 'live',
         ],
         'update' => [
-            'name'       => self::TESTDOMAIN,
+            'name' => self::TESTDOMAIN,
             'autoUpdate' => true,
         ],
     ];
@@ -36,17 +35,17 @@ class DomainTest extends AbstractEndpointTest
     /**
      *
      */
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->domainEndpoint = $this->Api->getDomainEndpoint();
+        $this->domainEndpoint = $this->api->getDomainEndpoint();
         $this->assertThat($this->domainEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\Domain'));
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $this->testCreate();
         $list = $this->domainEndpoint->getList(self::TESTDOMAIN);
@@ -54,7 +53,7 @@ class DomainTest extends AbstractEndpointTest
             if ($item['name'] == self::TESTDOMAIN) {
                 $result = $this->domainEndpoint->update(
                     $item['id'],
-                    new \DateTime($item['modified']),
+                    new DateTime($item['modified']),
                     $this->testData['update']['autoUpdate']
                 );
                 $this->verifyNoError($result);
@@ -66,9 +65,9 @@ class DomainTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testCreate()
+    public function testCreate(): void
     {
         $this->testDelete();
         $result = $this->domainEndpoint->create(self::TESTDOMAIN);
@@ -81,9 +80,9 @@ class DomainTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testDelete()
+    public function testDelete(): void
     {
         $list = $this->domainEndpoint->getList(self::TESTDOMAIN);
         foreach ($list['list'] as $item) {
@@ -91,7 +90,7 @@ class DomainTest extends AbstractEndpointTest
                 $result = $this->domainEndpoint->delete(
                     $item['name'],
                     $item['id'],
-                    new \DateTime($item['modified'])
+                    new DateTime($item['modified'])
                 );
                 $this->verifyNoError($result);
             }
@@ -102,7 +101,7 @@ class DomainTest extends AbstractEndpointTest
     /**
      *
      */
-    public function testGetList()
+    public function testGetList(): void
     {
         $this->testCreate();
         $result = $this->domainEndpoint->getList(self::TESTDOMAIN);

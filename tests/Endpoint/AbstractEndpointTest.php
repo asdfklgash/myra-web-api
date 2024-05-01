@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace Myracloud\Tests\Endpoint;
 
-
-use Myracloud\Tests\config;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
 use Myracloud\WebApi\WebApi;
 use PHPUnit\Framework\TestCase;
 
@@ -15,31 +17,32 @@ use PHPUnit\Framework\TestCase;
  */
 abstract class AbstractEndpointTest extends TestCase
 {
-    const TESTDOMAIN = 'myratest.org';
+    public const TESTDOMAIN = 'myratest.org';
 
-    /** @var WebApi */
-    protected $Api;
+    protected WebApi $api;
 
-    /**
-     *
-     */
-    protected function setUp()
+    protected function setUp(): void
     {
-        $config    = new config();
-        $config    = $config->get();
-        $this->Api = new WebApi(
+        $mockHandler = new MockHandler([
+            new Response(200, [], 'First response'),
+            new RequestException("Error Communicating with Server", new Request('GET', 'test')),
+            new Response(200, [], 'Third response')
+        ]);
+
+        $config = require __DIR__ . '/../Config.php';
+        $this->api = new WebApi(
             $config['apiKey'],
             $config['secret'],
-            'beta.myracloud.com'
+            'beta.myracloud.com',
+            requestHandler: $mockHandler
         );
-        $this->assertThat($this->Api, $this->isInstanceOf('Myracloud\WebApi\WebApi'));
-
+        $this->assertThat($this->api, $this->isInstanceOf('Myracloud\WebApi\WebApi'));
     }
 
     /**
      * @param $result
      */
-    protected function verifyListResult($result)
+    protected function verifyListResult($result): void
     {
         $this->verifyNoError($result);
 
@@ -58,7 +61,7 @@ abstract class AbstractEndpointTest extends TestCase
     /**
      * @param $result
      */
-    protected function verifyNoError($result)
+    protected function verifyNoError($result): void
     {
         $this->assertIsArray($result);
         $this->assertArrayHasKey('error', $result);
@@ -69,7 +72,7 @@ abstract class AbstractEndpointTest extends TestCase
      * @param $result
      * @param $data
      */
-    protected function verifyFields($result, $data)
+    protected function verifyFields($result, $data): void
     {
         foreach ($data as $key => $value) {
             $this->assertArrayHasKey($key, $result, 'Expected Key ' . $key . ' was not found.');

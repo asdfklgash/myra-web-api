@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace Myracloud\WebApi\Command;
 
 
+use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\TransferException;
-use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\Endpoint\SubdomainSetting;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -20,11 +20,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class SubdomainCommand extends AbstractCrudCommand
 {
-
-    /**
-     *
-     */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName('myracloud:api:subdomain');
@@ -53,10 +49,10 @@ EOF
     /**
      * @param InputInterface  $input
      * @param OutputInterface $output
-     * @return int|void|null
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return int
+     * @throws GuzzleException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $key     = null;
@@ -72,41 +68,32 @@ EOF
         } catch (TransferException $e) {
             $this->handleTransferException($e, $output);
 
-            return;
-        } catch (\Exception $e) {
+            return self::FAILURE;
+        } catch (Exception $e) {
             $output->writeln('<fg=red;options=bold>Error:</>' . $e->getMessage());
 
-            return;
+            return self::FAILURE;
         }
+
+        return self::SUCCESS;
     }
 
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    protected function OpUpdate(array $options, OutputInterface $output)
+    protected function OpUpdate(array $options, OutputInterface $output): void
     {
-        /** @var SubdomainSetting $endpoint */
         $endpoint = $this->getEndpoint();
 
-        switch (true) {
-            case $options['value'] == 'true':
-                $value = true;
-                break;
-            case $options['value'] == 'false':
-                $value = false;
-                break;
-            case $options['value'] == 'null':
-                $value = null;
-                break;
-            case is_numeric($options['value']):
-                $value = floatval($options['value']);
-                break;
-            default:
-                $value = $options['value'];
-        }
+        $value = match (true) {
+            $options['value'] == 'true' => true,
+            $options['value'] == 'false' => false,
+            $options['value'] == 'null' => null,
+            is_numeric($options['value']) => floatval($options['value']),
+            default => $options['value'],
+        };
         $data   = [
             $options['key'] => $value,
         ];
@@ -114,10 +101,7 @@ EOF
         $this->checkResult($return, $output);
     }
 
-    /**
-     * @return AbstractEndpoint
-     */
-    protected function getEndpoint(): AbstractEndpoint
+    protected function getEndpoint(): SubdomainSetting
     {
         return $this->webapi->getSubdomainSettingsEndpoint();
     }
@@ -126,11 +110,10 @@ EOF
      * @param array           $options
      * @param OutputInterface $output
      * @param                 $keyName
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    protected function OpList(array $options, OutputInterface $output, $keyName = null)
+    protected function OpList(array $options, OutputInterface $output, $keyName = null): void
     {
-        /** @var SubdomainSetting $endpoint */
         $endpoint = $this->getEndpoint();
         $return   = $endpoint->get($options['fqdn']);
         $this->checkResult($return, $output);
@@ -142,7 +125,7 @@ EOF
      * @param OutputInterface $output
      * @param null            $keyName
      */
-    protected function writeTable($data, OutputInterface $output, $keyName = null)
+    protected function writeTable($data, OutputInterface $output, $keyName = null): void
     {
         $table = new Table($output);
         $table->setHeaders([
@@ -173,7 +156,7 @@ EOF
         $table->render();
     }
 
-    private function formatCell($data)
+    private function formatCell($data): string
     {
         switch (true) {
             case is_bool($data):
@@ -193,11 +176,10 @@ EOF
      * @param array           $options
      * @param OutputInterface $output
      * @param                 $keyName
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    protected function OpListSingle(array $options, OutputInterface $output, $keyName)
+    protected function OpListSingle(array $options, OutputInterface $output, $keyName): void
     {
-        /** @var SubdomainSetting $endpoint */
         $endpoint = $this->getEndpoint();
         $return   = $endpoint->get($options['fqdn']);
         $this->checkResult($return, $output);
@@ -207,9 +189,8 @@ EOF
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @return mixed
      */
-    protected function OpCreate(array $options, OutputInterface $output)
+    protected function OpCreate(array $options, OutputInterface $output): void
     {
     }
 }

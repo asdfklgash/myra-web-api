@@ -4,8 +4,12 @@ declare(strict_types=1);
 namespace Myracloud\WebApi\Command;
 
 
+use DateTime;
+use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\Endpoint\IpFilter;
+use RuntimeException;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -17,17 +21,14 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class IpfilterCommand extends AbstractCrudCommand
 {
-    static $filterType = [
+    static array $filterType = [
         AbstractEndpoint::IPFILTER_TYPE_WHITELIST,
         AbstractEndpoint::IPFILTER_TYPE_BLACKLIST,
         'wl',
         'bl',
     ];
 
-    /**
-     *
-     */
-    protected function configure()
+    protected function configure(): void
     {
         $this->setName('myracloud:api:ipfilter');
         $this->addOption('value', null, InputOption::VALUE_REQUIRED, 'Filter pattern', null);
@@ -61,18 +62,17 @@ TAG
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    protected function OpCreate(array $options, OutputInterface $output)
+    protected function OpCreate(array $options, OutputInterface $output): void
     {
         if (empty($options['value'])) {
-            throw new \RuntimeException('You need to define a filter pattern via --value');
+            throw new RuntimeException('You need to define a filter pattern via --value');
         }
         if (empty($options['type'])) {
-            throw new \RuntimeException('You need to define Matching type via --type');
+            throw new RuntimeException('You need to define Matching type via --type');
         } elseif (!in_array($options['type'], self::$filterType)) {
-            throw new \RuntimeException('--type has to be one of ' . implode(',', self::$filterType));
+            throw new RuntimeException('--type has to be one of ' . implode(',', self::$filterType));
         }
 
         if ($options['type'] == 'wl') {
@@ -82,10 +82,7 @@ TAG
             $options['type'] = AbstractEndpoint::IPFILTER_TYPE_BLACKLIST;
         }
 
-
-        /** @var IpFilter $endpoint */
         $endpoint = $this->getEndpoint();
-
         $return = $endpoint->create(
             $options['fqdn'],
             $options['type'],
@@ -94,10 +91,7 @@ TAG
         $this->handleTableReturn($return, $output);
     }
 
-    /**
-     * @return AbstractEndpoint
-     */
-    protected function getEndpoint(): AbstractEndpoint
+    protected function getEndpoint(): IpFilter
     {
         return $this->webapi->getIpFilterEndpoint();
     }
@@ -106,7 +100,7 @@ TAG
      * @param                 $data
      * @param OutputInterface $output
      */
-    protected function writeTable($data, OutputInterface $output)
+    protected function writeTable($data, OutputInterface $output): void
     {
         $table = new Table($output);
         $table->setHeaders([
@@ -134,12 +128,10 @@ TAG
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
-    protected function OpUpdate(array $options, OutputInterface $output)
+    protected function OpUpdate(array $options, OutputInterface $output): void
     {
-        /** @var IpFilter $endpoint */
         $endpoint = $this->getEndpoint();
         $existing = $this->findById($options);
 
@@ -147,7 +139,7 @@ TAG
             $options['value'] = $existing['value'];
         }
         if (empty($options['type'])) {
-            throw new \RuntimeException('You need to define Matching type via --type');
+            throw new RuntimeException('You need to define Matching type via --type');
         }
         if ($options['type'] == 'wl') {
             $options['type'] = $existing['type'];
@@ -156,13 +148,13 @@ TAG
             $options['type'] = AbstractEndpoint::IPFILTER_TYPE_BLACKLIST;
         }
         if (!in_array($options['type'], self::$filterType)) {
-            throw new \RuntimeException('--type has to be one of ' . implode(',', self::$filterType));
+            throw new RuntimeException('--type has to be one of ' . implode(',', self::$filterType));
         }
 
         $return = $endpoint->update(
             $options['fqdn'],
             $options['id'],
-            new \DateTime($existing['modified']),
+            new DateTime($existing['modified']),
             $options['type'],
             $options['value']
         );

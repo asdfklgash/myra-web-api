@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\Tests\Endpoint;
 
+use DateTime;
+use GuzzleHttp\Exception\GuzzleException;
+use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\Endpoint\IpFilter;
 
 /**
@@ -13,15 +16,15 @@ use Myracloud\WebApi\Endpoint\IpFilter;
 class IpFilterTest extends AbstractEndpointTest
 {
     /** @var IpFilter */
-    protected $ipFilterEndpoint;
+    protected IpFilter $ipFilterEndpoint;
 
-    protected $testData = [
+    protected array $testData = [
         'create' => [
-            'type'  => IpFilter::IPFILTER_TYPE_BLACKLIST,
+            'type' => AbstractEndpoint::IPFILTER_TYPE_BLACKLIST,
             'value' => '1.2.3.4/32',
         ],
         'update' => [
-            'type'  => IpFilter::IPFILTER_TYPE_WHITELIST,
+            'type' => AbstractEndpoint::IPFILTER_TYPE_WHITELIST,
             'value' => '5.6.7.8/32',
         ],
     ];
@@ -29,17 +32,17 @@ class IpFilterTest extends AbstractEndpointTest
     /**
      *
      */
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->ipFilterEndpoint = $this->Api->getIpFilterEndpoint();
+        $this->ipFilterEndpoint = $this->api->getIpFilterEndpoint();
         $this->assertThat($this->ipFilterEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\IpFilter'));
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testGetList()
+    public function testGetList(): void
     {
         $this->testCreate();
         $result = $this->ipFilterEndpoint->getList(self::TESTDOMAIN);
@@ -48,9 +51,9 @@ class IpFilterTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testCreate()
+    public function testCreate(): void
     {
         $this->testDelete();
         $result = $this->ipFilterEndpoint->create(
@@ -66,9 +69,9 @@ class IpFilterTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testDelete()
+    public function testDelete(): void
     {
         $list = $this->ipFilterEndpoint->getList(self::TESTDOMAIN);
 
@@ -80,7 +83,7 @@ class IpFilterTest extends AbstractEndpointTest
                 $result = $this->ipFilterEndpoint->delete(
                     self::TESTDOMAIN,
                     $item['id'],
-                    new \DateTime($item['modified'])
+                    new DateTime($item['modified'])
                 );
                 $this->verifyNoError($result);
                 $this->verifyTargetObject($result, 'IpFilterVO');
@@ -88,7 +91,7 @@ class IpFilterTest extends AbstractEndpointTest
         }
     }
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $list = $this->ipFilterEndpoint->getList(self::TESTDOMAIN);
 
@@ -97,7 +100,7 @@ class IpFilterTest extends AbstractEndpointTest
                 $result = $this->ipFilterEndpoint->update(
                     self::TESTDOMAIN,
                     $item['id'],
-                    new \DateTime($item['modified']),
+                    new DateTime($item['modified']),
                     $this->testData['update']['type'],
                     $this->testData['update']['value']
                 );

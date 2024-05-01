@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Command;
 
+use DateTime;
+use GuzzleHttp\Exception\GuzzleException;
 use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\Endpoint\DnsRecord;
+use RuntimeException;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -17,7 +20,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class DnsCommand extends AbstractCrudCommand
 {
-    static $dnsTypes = [
+    static array $dnsTypes = [
         AbstractEndpoint::DNS_TYPE_A,
         AbstractEndpoint::DNS_TYPE_AAAA,
         AbstractEndpoint::DNS_TYPE_MX,
@@ -31,7 +34,7 @@ class DnsCommand extends AbstractCrudCommand
     /**
      *
      */
-    protected function configure()
+    protected function configure(): void
     {
         $this->setName('myracloud:api:dns');
         $this->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'time to live', null);
@@ -70,32 +73,31 @@ TAG
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return void
+     * @throws GuzzleException
      */
-    protected function OpCreate(array $options, OutputInterface $output)
+    protected function OpCreate(array $options, OutputInterface $output): void
     {
 
         if (empty($options['ttl'])) {
-            throw new \RuntimeException('You need to define a time to live via --ttl');
+            throw new RuntimeException('You need to define a time to live via --ttl');
         }
         if (empty($options['type'])) {
-            throw new \RuntimeException('You need to define Matching type via --type');
+            throw new RuntimeException('You need to define Matching type via --type');
         } elseif (!in_array($options['type'], self::$dnsTypes)) {
-            throw new \RuntimeException('--type has to be one of ' . implode(',', self::$dnsTypes));
+            throw new RuntimeException('--type has to be one of ' . implode(',', self::$dnsTypes));
         }
         if (empty($options['sub'])) {
-            throw new \RuntimeException('You need to define a subdomain via --sub');
+            throw new RuntimeException('You need to define a subdomain via --sub');
         }
         if (empty($options['ip'])) {
-            throw new \RuntimeException('You need to define a IpAddress via --ip');
+            throw new RuntimeException('You need to define a IpAddress via --ip');
         }
         if ($options['sslcert'] !== null && !is_readable(realpath($options['sslcert']))) {
-            throw new \RuntimeException(sprintf('Could not find given file "%s".', $options['sslcert']));
+            throw new RuntimeException(sprintf('Could not find given file "%s".', $options['sslcert']));
         }
-        /** @var DnsRecord $endpoint */
-        $endpoint = $this->getEndpoint();
 
+        $endpoint = $this->getEndpoint();
         $return = $endpoint->create(
             $options['fqdn'],
             $options['sub'],
@@ -103,15 +105,12 @@ TAG
             $options['ttl'],
             $options['type'],
             true,
-            $options['sslcert'] ? file_get_contents(realpath($options['sslcert'])) : null
+            $options['sslcert'] ? file_get_contents(realpath($options['sslcert'])) : ''
         );
         $this->handleTableReturn($return, $output);
     }
 
-    /**
-     * @return AbstractEndpoint
-     */
-    protected function getEndpoint(): AbstractEndpoint
+    protected function getEndpoint(): DnsRecord
     {
         return $this->webapi->getDnsRecordEndpoint();
     }
@@ -119,12 +118,11 @@ TAG
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return void
+     * @throws GuzzleException
      */
-    protected function OpUpdate(array $options, OutputInterface $output)
+    protected function OpUpdate(array $options, OutputInterface $output): void
     {
-        /** @var DnsRecord $endpoint */
         $endpoint = $this->getEndpoint();
         $existing = $this->findById($options);
 
@@ -135,7 +133,7 @@ TAG
             $options['type'] = $existing['recordType'];
         }
         if (!in_array($options['type'], self::$dnsTypes)) {
-            throw new \RuntimeException('--type has to be one of ' . implode(',', self::$dnsTypes));
+            throw new RuntimeException('--type has to be one of ' . implode(',', self::$dnsTypes));
         }
         if (empty($options['sub'])) {
             $options['sub'] = $existing['name'];
@@ -144,14 +142,14 @@ TAG
             $options['ip'] = $existing['value'];
         }
         if ($options['sslcert'] !== null && !is_readable(realpath($options['sslcert']))) {
-            throw new \RuntimeException(sprintf('Could not find given file "%s".', $options['sslcert']));
+            throw new RuntimeException(sprintf('Could not find given file "%s".', $options['sslcert']));
         }
 
 
         $return = $endpoint->update(
             $options['fqdn'],
             $options['id'],
-            new \DateTime($existing['modified']),
+            new DateTime($existing['modified']),
             $options['sub'],
             $options['ip'],
             $options['ttl'],
@@ -166,7 +164,7 @@ TAG
      * @param                 $data
      * @param OutputInterface $output
      */
-    protected function writeTable($data, OutputInterface $output)
+    protected function writeTable($data, OutputInterface $output): void
     {
         $table = new Table($output);
         $table->setHeaders([

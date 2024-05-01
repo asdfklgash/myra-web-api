@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Command;
 
+use Exception;
 use GuzzleHttp\Exception\TransferException;
 use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\WebApi;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -19,37 +19,33 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 abstract class AbstractCommand extends Command
 {
-    /** @var WebApi */
-    protected $webapi;
+    protected ?WebApi $webapi = null;
 
-    /**
-     *
-     */
-    protected function configure()
+    protected function configure(): void
     {
         $this->addOption('apiKey', 'k', InputOption::VALUE_REQUIRED, 'Api key to authenticate against Myra API.', null);
         $this->addOption('secret', 's', InputOption::VALUE_REQUIRED, 'Secret to authenticate against Myra API.', null);
-        $this->addOption('endpoint', 'ep', InputOption::VALUE_OPTIONAL, 'API endpoint.', 'app.myracloud.com');
+        $this->addOption('endpoint', 'ep', InputOption::VALUE_OPTIONAL, 'API endpoint.', 'api.myracloud.com');
     }
 
     /**
      * @param InputInterface  $input
      * @param OutputInterface $output
      */
-    protected function initialize(InputInterface $input, OutputInterface $output)
+    protected function initialize(InputInterface $input, OutputInterface $output): void
     {
         $confPath = ROOTDIR . DIRECTORY_SEPARATOR . 'config.php';
         $config   = [];
         if (file_exists($confPath)) {
-            include $confPath;
-            if (empty($input->getOption('apiKey')) && array_key_exists('apikey', $config)) {
-                $input->setOption('apiKey', $config['apikey']);
+            $configData = include $confPath;
+            if (empty($input->getOption('apiKey')) && isset($configData['apikey'])) {
+                $input->setOption('apiKey', $configData['apikey']);
             }
-            if (empty($input->getOption('secret')) && array_key_exists('secret', $config)) {
-                $input->setOption('secret', $config['secret']);
+            if (empty($input->getOption('secret')) && isset($configData['secret'])) {
+                $input->setOption('secret', $configData['secret']);
             }
-            if (empty($input->getOption('endpoint')) && array_key_exists('endpoint', $config)) {
-                $input->setOption('endpoint', $config['endpoint']);
+            if (empty($input->getOption('endpoint')) && isset($configData['endpoint'])) {
+                $input->setOption('endpoint', $configData['endpoint']);
             }
         }
     }
@@ -60,15 +56,15 @@ abstract class AbstractCommand extends Command
      * @param InputInterface  $input
      * @param OutputInterface $output
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
-    protected function resolveOptions(InputInterface $input, OutputInterface $output)
+    protected function resolveOptions(InputInterface $input, OutputInterface $output): array
     {
         $options = array_merge($input->getArguments(), $input->getOptions());
         if (empty($options['apiKey']) || empty($options['secret'])) {
-            throw new \Exception('apiKey and secret have to be provided either by parameter or config file.');
+            throw new Exception('apiKey and secret have to be provided either by parameter or config file.');
         }
-        $this->webapi = new WebApi($options['apiKey'], $options['secret'], $options['endpoint']);
+        $this->webapi ??= new WebApi($options['apiKey'], $options['secret'], $options['endpoint']);
 
         return $options;
     }
@@ -83,10 +79,10 @@ abstract class AbstractCommand extends Command
      * @param                 $data
      * @param OutputInterface $output
      */
-    protected function checkResult($data, OutputInterface $output)
+    protected function checkResult($data, OutputInterface $output): void
     {
-        if (is_array($data) && array_key_exists('error', $data)) {
-            if ($data['error'] == true) {
+        if (isset($data['error'])) {
+            if (!empty($data['error'])) {
                 if (array_key_exists('exception', $data)) {
                     $output->writeln('<fg=red;options=bold>API Exception:</> ' . $data['exception']['type'] . ' ' . $data['exception']['message']);
                 }
@@ -107,12 +103,10 @@ abstract class AbstractCommand extends Command
      * @param TransferException $e
      * @param OutputInterface   $output
      */
-    protected function handleTransferException(TransferException $e, OutputInterface $output)
+    protected function handleTransferException(TransferException $e, OutputInterface $output): void
     {
         $output->writeln('<fg=red;options=bold>Error:</> ' . $e->getMessage());
         $output->writeln('<fg=red;options=bold>Error:</> Are you using the correct key/secret?');
         $output->writeln('<fg=red;options=bold>Error:</> Is the domain attached to the account associated with this key/secret combination?');
     }
-
-
 }

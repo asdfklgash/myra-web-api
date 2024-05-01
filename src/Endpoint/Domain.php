@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
+use DateTime;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
 /**
@@ -12,53 +14,45 @@ use GuzzleHttp\RequestOptions;
  */
 class Domain extends AbstractEndpoint
 {
-    /**
-     * @var string
-     */
-    protected $epName = 'domains';
+    protected const ENDPOINT = 'domains';
 
     /**
-     * @param     $domain
+     * @param ?string $domain
      * @param int $page
-     * @return mixed
+     * @return array
+     * @throws GuzzleException
      */
-    public function getList($domain, $page = 1)
+    public function getList(?string $domain = null, int $page = 1): array
     {
-        $uri = $this->uri . '/' . $page;
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->get($uri);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->get(static::ENDPOINT . '/' . $page)
+        );
     }
 
     /**
-     * @param      $name
+     * @param string $name
      * @param bool $autoUpdate
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return array
+     * @throws GuzzleException
      */
-    public function create($name, $autoUpdate = false)
+    public function create(string $name, bool $autoUpdate = false): array
     {
         $options[RequestOptions::JSON] =
             [
                 'name'       => $name,
                 'autoUpdate' => $autoUpdate,
             ];
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('PUT', $this->uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse($this->client->request('PUT', static::ENDPOINT, $options));
     }
 
     /**
-     * @param $domain
-     * @param $id
-     * @param $modified
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param string $domain
+     * @param string $id
+     * @param DateTime $modified
+     * @return array
+     * @throws GuzzleException
      */
-    public function delete($domain, $id, \DateTime $modified)
+    public function delete(string $domain, string $id, DateTime $modified): array
     {
         $options[RequestOptions::JSON] =
             [
@@ -66,20 +60,20 @@ class Domain extends AbstractEndpoint
                 'id'       => $id,
                 'modified' => $modified->format('c'),
             ];
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('DELETE', $this->uri, $options);
 
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('DELETE', static::ENDPOINT, $options)
+        );
     }
 
     /**
-     * @param           $id
-     * @param \DateTime $modified
-     * @param bool      $autoUpdate
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param string $id
+     * @param DateTime $modified
+     * @param bool $autoUpdate
+     * @return array
+     * @throws GuzzleException
      */
-    public function update($id, \DateTime $modified, $autoUpdate = false)
+    public function update(string $id, DateTime $modified, bool $autoUpdate = false): array
     {
         $options[RequestOptions::JSON] =
             [
@@ -87,10 +81,8 @@ class Domain extends AbstractEndpoint
                 'modified'   => $modified->format('c'),
                 'autoUpdate' => $autoUpdate,
             ];
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('POST', $this->uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('POST', static::ENDPOINT, $options)
+        );
     }
 }

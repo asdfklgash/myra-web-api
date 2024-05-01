@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
+use DateTime;
+use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
 /**
@@ -12,32 +15,21 @@ use GuzzleHttp\RequestOptions;
  */
 class CacheSetting extends AbstractEndpoint
 {
-    /**
-     * @var string
-     */
-    protected $epName = 'cacheSettings';
+    protected const ENDPOINT = 'cacheSettings';
 
     /**
-     * @param        $domain
-     * @param        $path
-     * @param        $ttl
+     * @param string $domain
+     * @param string $path
+     * @param int $ttl
      * @param string $type
-     * @param bool   $enabled
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param bool $enabled
+     * @return array
+     * @throws GuzzleException
+     * @throws Exception
      */
-    public function create(
-        $domain,
-        $path,
-        $ttl,
-        $type = self::MATCHING_TYPE_PREFIX,
-        $enabled = true
-    ) {
-        $uri = $this->uri . '/' . $domain;
-
-
+    public function create(string $domain, string $path, int $ttl, string $type = self::MATCHING_TYPE_PREFIX, bool $enabled = true): array
+    {
         $this->validateMatchingType($type);
-
         $options[RequestOptions::JSON] =
             [
                 "path"    => $path,
@@ -45,38 +37,26 @@ class CacheSetting extends AbstractEndpoint
                 "type"    => $type,
                 "enabled" => $enabled,
             ];
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('PUT', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('PUT', static::ENDPOINT . '/' . $domain, $options)
+        );
     }
 
     /**
-     * @param           $domain
-     * @param           $id
-     * @param \DateTime $modified
-     * @param           $path
-     * @param           $ttl
-     * @param string    $type
-     * @param bool      $enabled
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param string $domain
+     * @param string $id
+     * @param DateTime $modified
+     * @param string $path
+     * @param int $ttl
+     * @param string $type
+     * @param bool $enabled
+     * @return array
+     * @throws GuzzleException
+     * @throws Exception
      */
-    public function update(
-        $domain,
-        $id,
-        \DateTime $modified,
-        $path,
-        $ttl,
-        $type = self::MATCHING_TYPE_PREFIX,
-        $enabled = true
-    ) {
-
-        $uri = $this->uri . '/' . $domain;
-
+    public function update(string $domain, string $id, DateTime $modified, string $path, int $ttl, string $type = self::MATCHING_TYPE_PREFIX, bool $enabled = true): array
+    {
         $this->validateMatchingType($type);
-
         $options[RequestOptions::JSON] =
             [
                 "id"       => $id,
@@ -86,10 +66,8 @@ class CacheSetting extends AbstractEndpoint
                 "type"     => $type,
                 "enabled"  => $enabled,
             ];
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('POST', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse(
+            $this->client->request('POST', static::ENDPOINT . '/' . $domain, $options)
+        );
     }
 }

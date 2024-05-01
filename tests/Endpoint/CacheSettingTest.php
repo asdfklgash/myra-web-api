@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\Tests\Endpoint;
 
+use DateTime;
+use GuzzleHttp\Exception\GuzzleException;
+use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\Endpoint\CacheSetting;
 
 /**
@@ -12,43 +15,31 @@ use Myracloud\WebApi\Endpoint\CacheSetting;
  */
 class CacheSettingTest extends AbstractEndpointTest
 {
-    /** @var CacheSetting */
-    protected $cacheSettingsEndpoint;
+    protected CacheSetting $cacheSettingsEndpoint;
 
-
-    protected $testData = [
+    protected array $testData = [
         'create' => [
-            'path'        => '/testPath',
-            'ttl'         => 300,
+            'path' => '/testPath',
+            'ttl' => 300,
             'notFoundTtl' => 60,
-            'type'        => CacheSetting::MATCHING_TYPE_PREFIX,
-            'enforce'     => false,
-            'sort'        => 0,
+            'type' => AbstractEndpoint::MATCHING_TYPE_PREFIX,
+            'enforce' => false,
+            'sort' => 0,
         ],
         'update' => [
-            'path'        => '/testPathUpdate',
-            'ttl'         => 333,
+            'path' => '/testPathUpdate',
+            'ttl' => 333,
             'notFoundTtl' => 60,
-            'type'        => CacheSetting::MATCHING_TYPE_PREFIX,
-            'enforce'     => false,
-            'sort'        => 0,
+            'type' => AbstractEndpoint::MATCHING_TYPE_PREFIX,
+            'enforce' => false,
+            'sort' => 0,
         ],
     ];
 
     /**
-     *
+     * @throws GuzzleException
      */
-    public function setUp()
-    {
-        parent::setUp();
-        $this->cacheSettingsEndpoint = $this->Api->getCacheSettingsEndpoint();
-        $this->assertThat($this->cacheSettingsEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\CacheSetting'));
-    }
-
-    /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     */
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $this->testCreate();
         $list = $this->cacheSettingsEndpoint->getList(self::TESTDOMAIN);
@@ -57,7 +48,7 @@ class CacheSettingTest extends AbstractEndpointTest
                 $result = $this->cacheSettingsEndpoint->update(
                     self::TESTDOMAIN,
                     $item['id'],
-                    new \DateTime($item['modified']),
+                    new DateTime($item['modified']),
                     $this->testData['update']['path'],
                     $this->testData['update']['ttl']
                 );
@@ -70,9 +61,9 @@ class CacheSettingTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testCreate()
+    public function testCreate(): void
     {
         $this->testDelete();
         $result = $this->cacheSettingsEndpoint->create(
@@ -87,9 +78,9 @@ class CacheSettingTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testDelete()
+    public function testDelete(): void
     {
         $list = $this->cacheSettingsEndpoint->getList(self::TESTDOMAIN);
         foreach ($list['list'] as $item) {
@@ -100,7 +91,7 @@ class CacheSettingTest extends AbstractEndpointTest
                 $result = $this->cacheSettingsEndpoint->delete(
                     self::TESTDOMAIN,
                     $item['id'],
-                    new \DateTime($item['modified'])
+                    new DateTime($item['modified'])
                 );
                 $this->verifyNoError($result);
             }
@@ -110,11 +101,21 @@ class CacheSettingTest extends AbstractEndpointTest
     /**
      *
      */
-    public function testGetList()
+    public function testGetList(): void
     {
         $this->testCreate();
         $result = $this->cacheSettingsEndpoint->getList(self::TESTDOMAIN);
         $this->verifyListResult($result);
         var_dump($result);
+    }
+
+    /**
+     *
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->cacheSettingsEndpoint = $this->api->getCacheSettingsEndpoint();
+        $this->assertThat($this->cacheSettingsEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\CacheSetting'));
     }
 }

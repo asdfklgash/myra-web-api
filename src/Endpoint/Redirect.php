@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
+use DateTime;
+use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
 /**
@@ -15,33 +18,23 @@ class Redirect extends AbstractEndpoint
     /**
      * @var string
      */
-    protected $epName = 'redirects';
+    protected const ENDPOINT = 'redirects';
 
     /**
-     * @param        $domain
-     * @param        $source
-     * @param        $destination
+     * @param string $domain
+     * @param string $source
+     * @param string $destination
      * @param string $type
      * @param string $matchingType
-     * @param bool   $expertMode
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param bool $expertMode
+     * @return array
+     * @throws GuzzleException
+     * @throws Exception
      */
-    public function create(
-        $domain,
-        $source,
-        $destination,
-        $type = self::REDIRECT_TYPE_REDIRECT,
-        $matchingType = self::MATCHING_TYPE_PREFIX,
-        $expertMode = false
-    ) {
-        $uri = $this->uri . '/' . $domain;
-
+    public function create(string $domain, string $source, string $destination, string $type = self::REDIRECT_TYPE_REDIRECT, string $matchingType = self::MATCHING_TYPE_PREFIX, bool $expertMode = false): array
+    {
         $this->validateRedirectType($type);
-
         $this->validateMatchingType($matchingType);
-
-
         $options[RequestOptions::JSON] =
             [
                 "source"       => $source,
@@ -50,42 +43,26 @@ class Redirect extends AbstractEndpoint
                 "matchingType" => $matchingType,
                 "expertMode"   => $expertMode,
             ];
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('PUT', $uri, $options);
-
-        return $this->handleResponse($res);
+        return $this->handleResponse($this->client->request('PUT', static::ENDPOINT . '/' . $domain, $options));
     }
 
     /**
-     * @param           $domain
-     * @param           $id
-     * @param \DateTime $modified
-     * @param           $source
-     * @param           $destination
-     * @param string    $type
-     * @param string    $matchingType
-     * @param bool      $expertMode
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param string $domain
+     * @param string $id
+     * @param DateTime $modified
+     * @param string $source
+     * @param string $destination
+     * @param string $type
+     * @param string $matchingType
+     * @param bool $expertMode
+     * @return array
+     * @throws GuzzleException
+     * @throws Exception
      */
-    public function update(
-        $domain,
-        $id,
-        \DateTime $modified,
-        $source,
-        $destination,
-        $type = self::REDIRECT_TYPE_REDIRECT,
-        $matchingType = self::MATCHING_TYPE_PREFIX,
-        $expertMode = false
-    ) {
-
-        $uri = $this->uri . '/' . $domain;
-
+    public function update(string $domain, string $id, DateTime $modified, string $source, string $destination, string $type = self::REDIRECT_TYPE_REDIRECT, string $matchingType = self::MATCHING_TYPE_PREFIX, bool $expertMode = false): array
+    {
         $this->validateRedirectType($type);
-
         $this->validateMatchingType($matchingType);
-
         $options[RequestOptions::JSON] =
             [
                 "id"           => $id,
@@ -96,12 +73,8 @@ class Redirect extends AbstractEndpoint
                 "matchingType" => $matchingType,
                 "expertMode"   => $expertMode,
             ];
-
-        /** @var \GuzzleHttp\Psr7\Response $res */
-        $res = $this->client->request('POST', $uri, $options);
-
-        return $this->handleResponse($res);
-
+        return $this->handleResponse(
+            $this->client->request('POST', static::ENDPOINT . '/' . $domain, $options)
+        );
     }
-
 }

@@ -3,26 +3,29 @@ declare(strict_types=1);
 
 namespace Myracloud\Tests\Endpoint;
 
+use GuzzleHttp\Exception\GuzzleException;
 use Myracloud\WebApi\Endpoint\CacheClear;
 
 class CacheClearTest extends AbstractEndpointTest
 {
-    /** @var CacheClear */
-    protected $cacheClearEndpoint;
+    protected CacheClear $cacheClearEndpoint;
 
     /**
      *
      */
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->cacheClearEndpoint = $this->Api->getCacheClearEndpoint();
+        $this->cacheClearEndpoint = $this->api->getCacheClearEndpoint();
         $this->assertThat($this->cacheClearEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\CacheClear'));
     }
 
-    public function testClear()
+    /**
+     * @throws GuzzleException
+     */
+    public function testClear(): void
     {
-        $result = $this->cacheClearEndpoint->clear(self::TESTDOMAIN, self::TESTDOMAIN, '*', false);
+        $result = $this->cacheClearEndpoint->clear(self::TESTDOMAIN, self::TESTDOMAIN, '*');
         var_dump($result);
     }
 }

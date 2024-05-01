@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace Myracloud\Tests\Endpoint;
 
+use DateTime;
+use Exception;
+use GuzzleHttp\Exception\GuzzleException;
+use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\Endpoint\DnsRecord;
 
 /**
@@ -12,77 +16,76 @@ use Myracloud\WebApi\Endpoint\DnsRecord;
  */
 class DnsRecordTest extends AbstractEndpointTest
 {
-    /** @var DnsRecord */
-    protected $dnsRecordEndpoint;
+    protected DnsRecord $dnsRecordEndpoint;
 
-    protected $testData = [
+    protected array $testData = [
         'create' => [
-            'value'      => '123.123.123.123',
-            'priority'   => 0,
-            'ttl'        => 333,
-            'recordType' => DnsRecord::DNS_TYPE_A,
-            'active'     => true,
-            'enabled'    => true,
-            'paused'     => false,
-            'caaFlags'   => 0,
+            'value' => '123.123.123.123',
+            'priority' => 0,
+            'ttl' => 333,
+            'recordType' => AbstractEndpoint::DNS_TYPE_A,
+            'active' => true,
+            'enabled' => true,
+            'paused' => false,
+            'caaFlags' => 0,
         ],
         'update' => [
-            'value'      => '12.23.34.45',
-            'priority'   => 0,
-            'ttl'        => 333,
-            'recordType' => DnsRecord::DNS_TYPE_A,
-            'active'     => false,
-            'enabled'    => true,
-            'paused'     => false,
-            'caaFlags'   => 0,
+            'value' => '12.23.34.45',
+            'priority' => 0,
+            'ttl' => 333,
+            'recordType' => AbstractEndpoint::DNS_TYPE_A,
+            'active' => false,
+            'enabled' => true,
+            'paused' => false,
+            'caaFlags' => 0,
         ],
-        'list1'  => [
-            'value'      => '22.222.222.222',
-            'name'       => 'someOtherName',
-            'priority'   => 0,
-            'ttl'        => 112233,
-            'recordType' => DnsRecord::DNS_TYPE_A,
-            'active'     => false,
-            'enabled'    => true,
-            'paused'     => false,
-            'caaFlags'   => 0,
+        'list1' => [
+            'value' => '22.222.222.222',
+            'name' => 'someOtherName',
+            'priority' => 0,
+            'ttl' => 112233,
+            'recordType' => AbstractEndpoint::DNS_TYPE_A,
+            'active' => false,
+            'enabled' => true,
+            'paused' => false,
+            'caaFlags' => 0,
         ],
-        'list2'  => [
-            'value'      => 'test test test',
-            'name'       => 'testname',
-            'priority'   => 0,
-            'ttl'        => 9999,
-            'recordType' => DnsRecord::DNS_TYPE_TXT,
-            'active'     => false,
-            'enabled'    => true,
-            'paused'     => false,
-            'caaFlags'   => 0,
+        'list2' => [
+            'value' => 'test test test',
+            'name' => 'testname',
+            'priority' => 0,
+            'ttl' => 9999,
+            'recordType' => AbstractEndpoint::DNS_TYPE_TXT,
+            'active' => false,
+            'enabled' => true,
+            'paused' => false,
+            'caaFlags' => 0,
         ],
     ];
 
-    protected $subDomain = 'subdomain';
-    protected $subDomain2 = 'otherdomain';
+    protected string $subDomain = 'subdomain';
+    protected string $subDomain2 = 'otherdomain';
 
     /**
      *
      */
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->dnsRecordEndpoint = $this->Api->getDnsRecordEndpoint();
+        $this->dnsRecordEndpoint = $this->api->getDnsRecordEndpoint();
         $this->assertThat($this->dnsRecordEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\DnsRecord'));
 
-        $this->testData['create']['name']             = $this->subDomain . '.' . self::TESTDOMAIN;
+        $this->testData['create']['name'] = $this->subDomain . '.' . self::TESTDOMAIN;
         $this->testData['create']['alternativeCname'] = $this->subDomain . '-' . str_replace('.', '-', self::TESTDOMAIN) . '.ax4z.com.';
 
-        $this->testData['update']['name']             = $this->subDomain2 . '.' . self::TESTDOMAIN;
+        $this->testData['update']['name'] = $this->subDomain2 . '.' . self::TESTDOMAIN;
         $this->testData['update']['alternativeCname'] = $this->subDomain2 . '-' . str_replace('.', '-', self::TESTDOMAIN) . '.ax4z.com.';
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $this->testCreate();
         $list = $this->dnsRecordEndpoint->getList(self::TESTDOMAIN);
@@ -91,7 +94,7 @@ class DnsRecordTest extends AbstractEndpointTest
                 $result = $this->dnsRecordEndpoint->update(
                     self::TESTDOMAIN,
                     $item['id'],
-                    new \DateTime($item['modified']),
+                    new DateTime($item['modified']),
                     $this->subDomain2,
                     $this->testData['update']['value'],
                     $this->testData['update']['ttl'],
@@ -106,9 +109,9 @@ class DnsRecordTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testCreate()
+    public function testCreate(): void
     {
         $this->testDelete();
         $result = $this->dnsRecordEndpoint->create(
@@ -125,9 +128,9 @@ class DnsRecordTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testDelete()
+    public function testDelete(): void
     {
         $list = $this->dnsRecordEndpoint->getList(self::TESTDOMAIN);
         foreach ($list['list'] as $item) {
@@ -138,7 +141,7 @@ class DnsRecordTest extends AbstractEndpointTest
                 $result = $this->dnsRecordEndpoint->delete(
                     self::TESTDOMAIN,
                     $item['id'],
-                    new \DateTime($item['modified'])
+                    new DateTime($item['modified'])
                 );
                 $this->verifyNoError($result);
             }
@@ -148,7 +151,7 @@ class DnsRecordTest extends AbstractEndpointTest
     /**
      *
      */
-    public function testGetList()
+    public function testGetList(): void
     {
         $this->testCreate();
         $result = $this->dnsRecordEndpoint->getList(self::TESTDOMAIN);
@@ -156,10 +159,10 @@ class DnsRecordTest extends AbstractEndpointTest
     }
 
     /**
-     * @throws \Exception
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws Exception
+     * @throws GuzzleException
      */
-    public function testGetListFiltered()
+    public function testGetListFiltered(): void
     {
         $this->dnsRecordEndpoint->create(
             self::TESTDOMAIN,
@@ -189,12 +192,12 @@ class DnsRecordTest extends AbstractEndpointTest
         /**
          * List only A Records
          */
-        $result = $this->dnsRecordEndpoint->getList(self::TESTDOMAIN, 1, null, DnsRecord::DNS_TYPE_A);
+        $result = $this->dnsRecordEndpoint->getList(self::TESTDOMAIN, 1, null, AbstractEndpoint::DNS_TYPE_A);
         $this->verifyNoError($result);
 
         $this->assertEquals(2, count($result['list']));
         foreach ($result['list'] as $item) {
-            $this->assertEquals(DnsRecord::DNS_TYPE_A, $item['recordType']);
+            $this->assertEquals(AbstractEndpoint::DNS_TYPE_A, $item['recordType']);
         }
 
         /**

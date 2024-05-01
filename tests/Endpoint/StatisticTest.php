@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\Tests\Endpoint;
 
+use DateInterval;
+use DateTime;
+use GuzzleHttp\Exception\GuzzleException;
 use Myracloud\WebApi\Endpoint\Statistic;
 
 /**
@@ -12,44 +15,40 @@ use Myracloud\WebApi\Endpoint\Statistic;
  */
 class StatisticTest extends AbstractEndpointTest
 {
-    /** @var Statistic */
-    protected $statisticEndpoint;
+    protected Statistic $statisticEndpoint;
 
-    /**
-     *
-     */
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->statisticEndpoint = $this->Api->getStatisticEndpoint();
+        $this->statisticEndpoint = $this->api->getStatisticEndpoint();
         $this->assertThat($this->statisticEndpoint, $this->isInstanceOf('Myracloud\WebApi\Endpoint\Statistic'));
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function testQuery()
+    public function testQuery(): void
     {
-        $endDate   = new \DateTime();
+        $endDate = new DateTime();
         $startDate = clone $endDate;
-        $startDate->sub(new \DateInterval('P1D'));
+        $startDate->sub(new DateInterval('P1D'));
 
-        $query  = [
+        $query = [
             "query" => [
                 "aggregationInterval" => 'hour',
-                "dataSources"         => [
+                "dataSources" => [
                     'myr' => [
                         'source' => 'bytes_cache_hits',
-                        'type'   => 'stats',
+                        'type' => 'stats',
                     ],
                 ]
                 ,
-                'startDate'           => $startDate->format('c'),
-                'endDate'             => $endDate->format('c'),
-                'fqdn'                => [
+                'startDate' => $startDate->format('c'),
+                'endDate' => $endDate->format('c'),
+                'fqdn' => [
                     "ALL:" . self::TESTDOMAIN,
                 ],
-                'type'                => 'fqdn',
+                'type' => 'fqdn',
             ],
         ];
         $result = $this->statisticEndpoint->query($query);
