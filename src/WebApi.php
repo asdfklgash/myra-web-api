@@ -27,22 +27,8 @@ use Myracloud\WebApi\Middleware\Signature;
  */
 class WebApi
 {
-    /**
-     * @var string
-     */
-    protected string $apiKey = '';
-    /**
-     * @var string
-     */
-    protected string $secret = '';
-    /**
-     * @var string
-     */
-    protected string $site = 'api.myracloud.com';
-    /**
-     * @var string
-     */
-    protected string $lang = 'en';
+    private const DEFAULT_API_DOMAIN = 'api.myracloud.com';
+    private const DEFAULT_API_LANG = 'en';
     /**
      * @var Client
      */
@@ -55,23 +41,19 @@ class WebApi
     /**
      * @param string $apiKey
      * @param string $secret
-     * @param string|null $site
-     * @param string|null $lang
+     * @param string $site
+     * @param string $lang
      * @param array $connectionConfig
      * @param callable|null $requestHandler default is CurlHandler
      */
-    public function __construct(string $apiKey, string $secret, ?string $site = null, ?string $lang = 'en', array $connectionConfig = [], ?callable $requestHandler = null)
-    {
-        $this->apiKey = $apiKey;
-        $this->secret = $secret;
-
-        if ($lang != null) {
-            $this->lang = $lang;
-        }
-        if ($site != null) {
-            $this->site = $site;
-        }
-
+    public function __construct(
+        string $apiKey,
+        string $secret,
+        string $site = self::DEFAULT_API_DOMAIN,
+        string $lang = self::DEFAULT_API_LANG,
+        array $connectionConfig = [],
+        ?callable $requestHandler = null
+    ) {
         if (!is_callable($requestHandler))
             $requestHandler = new CurlHandler();
 
@@ -84,13 +66,10 @@ class WebApi
         );
 
         $client = new Client(
-            array_merge(
-                [
-                    'base_uri' => 'https://' . $this->site . '/' . $this->lang . '/rapi/',
-                    'handler'  => $stack,
-                ],
-                $connectionConfig
-            )
+            $connectionConfig + [
+                'base_uri' => 'https://' . $site . '/' . $lang . '/rapi/',
+                'handler'  => $stack,
+            ]
         );
         $this->client = $client;
     }

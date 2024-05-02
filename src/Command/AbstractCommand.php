@@ -25,7 +25,7 @@ abstract class AbstractCommand extends Command
     {
         $this->addOption('apiKey', 'k', InputOption::VALUE_REQUIRED, 'Api key to authenticate against Myra API.', null);
         $this->addOption('secret', 's', InputOption::VALUE_REQUIRED, 'Secret to authenticate against Myra API.', null);
-        $this->addOption('endpoint', 'ep', InputOption::VALUE_OPTIONAL, 'API endpoint.', 'api.myracloud.com');
+        $this->addOption('endpoint', 'e', InputOption::VALUE_OPTIONAL, 'API endpoint.', 'api.myracloud.com');
     }
 
     /**
