@@ -4,9 +4,10 @@ declare(strict_types=1);
 namespace Myracloud\WebApi\Command;
 
 
-use DateTime;
+use DateTimeImmutable;
 use GuzzleHttp\Exception\GuzzleException;
-use Myracloud\WebApi\Endpoint\AbstractEndpoint;
+use Myracloud\WebApi\Endpoint\Enum\MatchEnum;
+use Myracloud\WebApi\Endpoint\Enum\RedirectEnum;
 use Myracloud\WebApi\Endpoint\Redirect;
 use RuntimeException;
 use Symfony\Component\Console\Helper\Table;
@@ -15,18 +16,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class RedirectCommand extends AbstractCrudCommand
 {
-
-    static array $redirTypes = [
-        AbstractEndpoint::REDIRECT_TYPE_REDIRECT,
-        AbstractEndpoint::REDIRECT_TYPE_PERMANENT,
-    ];
-
-    static array $matchTypes = [
-        AbstractEndpoint::MATCHING_TYPE_SUFFIX,
-        AbstractEndpoint::MATCHING_TYPE_PREFIX,
-        AbstractEndpoint::MATCHING_TYPE_EXACT,
-    ];
-
     /**
      *
      */
@@ -37,8 +26,8 @@ class RedirectCommand extends AbstractCrudCommand
         $this->addOption('source', null, InputOption::VALUE_REQUIRED, 'Source path', null);
         $this->addOption('dest', null, InputOption::VALUE_REQUIRED, 'destination path', null);
 
-        $this->addOption('type', null, InputOption::VALUE_REQUIRED, 'Type of redirect (' . implode(',', self::$redirTypes) . ')', AbstractEndpoint::REDIRECT_TYPE_REDIRECT);
-        $this->addOption('matchtype', null, InputOption::VALUE_REQUIRED, 'Type of substring matching (' . implode(',', self::$matchTypes) . ')', AbstractEndpoint::MATCHING_TYPE_PREFIX);
+        $this->addOption('type', null, InputOption::VALUE_REQUIRED, 'Type of redirect (' . implode(',', RedirectEnum::values()) . ')', RedirectEnum::Redirect->value);
+        $this->addOption('matchtype', null, InputOption::VALUE_REQUIRED, 'Type of substring matching (' . implode(',', MatchEnum::values()) . ')', MatchEnum::Prefix->value);
 
 
         $this->setDescription('Redirect commands allow you to edit Url Redirects.');
@@ -60,7 +49,7 @@ bin/console myracloud:api:redirect <fqdn> -o update --id <id-from-list> --source
 <fg=yellow>Example deleting a existing Redirect entry:</>
 bin/console myracloud:api:redirect -o delete --id <id-from-list>
 TAG
-                , implode(',', self::$redirTypes), implode(',', self::$matchTypes))
+                , implode(',', RedirectEnum::values()), implode(',', MatchEnum::values()))
         );
         parent::configure();
     }
@@ -73,30 +62,28 @@ TAG
     protected function OpCreate(array $options, OutputInterface $output): void
     {
         $endpoint = $this->getEndpoint();
-
         if (empty($options['source'])) {
             throw new RuntimeException('You need to define source path via --source');
         }
         if (empty($options['dest'])) {
             throw new RuntimeException('You need to define destination path via --dest');
         }
-        if (empty($options['type'])) {
-            throw new RuntimeException('You need to define Matching type via --type');
-        } elseif (!in_array($options['type'], self::$redirTypes)) {
-            throw new RuntimeException('--type has to be one of ' . implode(',', self::$redirTypes));
+        $type = RedirectEnum::tryFrom($options['type']??'');
+        $matchType = MatchEnum::tryFrom($options['matchtype']??'');
+
+        if (!$type) {
+            throw new RuntimeException('--type has to be one of ' . implode(',', RedirectEnum::values()));
+        }
+        if (!$matchType) {
+            throw new RuntimeException('--type has to be one of ' . implode(',', MatchEnum::values()));
         }
 
-        if (empty($options['matchtype'])) {
-            throw new RuntimeException('You need to define Matching type via --matchtype');
-        } elseif (!in_array($options['matchtype'], self::$matchTypes)) {
-            throw new RuntimeException('--matchtype has to be one of ' . implode(',', self::$matchTypes));
-        }
         $return = $endpoint->create(
             $options['fqdn'],
             $options['source'],
             $options['dest'],
-            $options['type'],
-            $options['matchtype']
+            $type,
+            $matchType
         );
         $this->handleTableReturn($return, $output);
     }
@@ -126,14 +113,14 @@ TAG
 
         foreach ($data as $item) {
             $table->addRow([
-                array_key_exists('id', $item) ? $item['id'] : null,
+                $item['id']??null,
                 $item['created'],
                 $item['modified'],
-                @$item['source'],
-                @$item['destination'],
-                @$item['type'],
+                $item['source']??'',
+                $item['destination']??'',
+                RedirectEnum::tryFrom($item['type']??'')?->value,
                 $item['subDomainName'],
-                $item['matchingType'],
+                MatchEnum::tryFrom($item['matchingType']??'')?->value,
             ]);
         }
         $table->render();
@@ -149,35 +136,26 @@ TAG
         $endpoint = $this->getEndpoint();
         $existing = $this->findById($options);
 
-        if (empty($options['source'])) {
-            $options['source'] = $existing['source'];
-        }
-        if (empty($options['dest'])) {
-            $options['dest'] = $existing['destination'];
-        }
-        if (empty($options['type'])) {
-            $options['type'] = $existing['type'];
-        }
-        if (!in_array($options['type'], self::$redirTypes)) {
-            throw new RuntimeException('--type has to be one of ' . implode(',', self::$redirTypes));
-        }
+        $options['source'] ??= $existing['source'] ?? '';
+        $options['dest'] ??= $existing['destination'] ?? '';
+        $type = RedirectEnum::tryFrom($options['type']??$existing['type']??'');
+        $matchType = MatchEnum::tryFrom($options['matchtype']??$existing['matchtype']??'');
 
-        if (empty($options['matchtype'])) {
-            $options['matchtype'] = $existing['matchtype'];
+        if (!$type) {
+            throw new RuntimeException('--type has to be one of ' . implode(',', RedirectEnum::values()));
         }
-
-        if (!in_array($options['matchtype'], self::$matchTypes)) {
-            throw new RuntimeException('--matchtype has to be one of ' . implode(',', self::$matchTypes));
+        if (!$matchType) {
+            throw new RuntimeException('--matchtype has to be one of ' . implode(',', MatchEnum::values()));
         }
 
         $return = $endpoint->update(
             $options['fqdn'],
             $options['id'],
-            new DateTime($existing['modified']),
+            new DateTimeImmutable($existing['modified']),
             $options['source'],
             $options['dest'],
-            $options['type'],
-            $options['matchtype']
+            $type,
+            $matchType
         );
 
         $this->handleTableReturn($return, $output);

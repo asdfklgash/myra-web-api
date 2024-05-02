@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
-
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
+use Myracloud\WebApi\Endpoint\Enum\ObjectVOEnum;
 
 /**
  * Class Certificate
@@ -18,17 +18,17 @@ class Certificate extends AbstractEndpoint
 
     /**
      * @param string $domain
-     * @param string $objectType
+     * @param ObjectVOEnum $objectType
      * @param string $cert
      * @param string $key
      * @return array
      * @throws GuzzleException
      */
-    public function create(string $domain, string $objectType = 'SslCertVO', string $cert = '', string $key = ''): array
+    public function create(string $domain, ObjectVOEnum $objectType = ObjectVOEnum::SslCertVO, string $cert = '', string $key = ''): array
     {
         $options[RequestOptions::JSON] =
             [
-                'objectType' => $objectType,
+                'objectType' => $objectType->value,
                 'cert'       => $cert,
                 'key'        => $key,
             ];

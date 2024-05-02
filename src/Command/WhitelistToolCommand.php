@@ -4,9 +4,11 @@ declare(strict_types=1);
 namespace Myracloud\WebApi\Command;
 
 use Exception;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\TransferException;
 use IPTools\IP;
 use IPTools\Network;
+use Myracloud\WebApi\Command\Enum\WhitelistFormatEnum;
 use Myracloud\WebApi\Endpoint\Networks;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -14,20 +16,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class WhitelistToolCommand extends AbstractCommand
 {
-    private const FORMAT_IPTABLES  = 'iptables';
-    private const FORMAT_IP6TABLES = 'ip6tables';
-    private const FORMAT_IPSET     = 'ipset';
-    private const FORMAT_NFTABLES  = 'nftables';
-    /**
-     * @var array
-     */
-    protected array $formats = [
-        self::FORMAT_IPTABLES,
-        self::FORMAT_IP6TABLES,
-        self::FORMAT_IPSET,
-        self::FORMAT_NFTABLES,
-    ];
-
     /**
      *
      */
@@ -37,7 +25,7 @@ class WhitelistToolCommand extends AbstractCommand
         $this->setName('myracloud:tools:gen-whitelist');
         $this->setDescription('Export Firewall rules for an Origin Host, allowing access by the current Myracloud Hosts.');
 
-        $this->addOption('format', 'f', InputOption::VALUE_REQUIRED, 'Format for export.', self::FORMAT_IPTABLES);
+        $this->addOption('format', 'f', InputOption::VALUE_REQUIRED, 'Format for export.', WhitelistFormatEnum::IPTables->value);
 
         $this->setHelp(<<<'TAG'
 Will generate a Firewall Ruleset to whitelist all currently active Myracloud Hosts on the Origin server.
@@ -60,6 +48,7 @@ TAG
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int
+     * @throws GuzzleException
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -67,27 +56,21 @@ TAG
             $options  = $this->resolveOptions($input, $output);
             $endpoint = $this->getEndpoint();
             $data     = $endpoint->getList();
+            $format = WhitelistFormatEnum::tryFrom($options['format']);
             $output->writeln(
                 [
                     '######################################################',
-                    '# Format: ' . $options['format'],
+                    '# Format: ' . $format->value,
                     '######################################################',
                 ]
             );
-            switch ($options['format']) {
-                case self::FORMAT_IPTABLES:
-                    $output->writeln($this->renderIpTables($data['list']));
-                    break;
-                case self::FORMAT_IP6TABLES:
-                    $output->writeln($this->renderIp6Tables($data['list']));
-                    break;
-                case self::FORMAT_IPSET:
-                    $output->writeln($this->renderIpset($data['list']));
-                    break;
-                case self::FORMAT_NFTABLES:
-                    $output->writeln($this->renderNFTSet($data['list']));
-                    break;
-            }
+
+            match ($format) {
+                WhitelistFormatEnum::IPTables => $output->writeln($this->renderIpTables($data['list'])),
+                WhitelistFormatEnum::IP6Tables => $output->writeln($this->renderIp6Tables($data['list'])),
+                WhitelistFormatEnum::IPSet => $output->writeln($this->renderIpset($data['list'])),
+                WhitelistFormatEnum::NFTables => $output->writeln($this->renderNFTSet($data['list']))
+            };
 
         } catch (TransferException $e) {
             $this->handleTransferException($e, $output);
@@ -100,22 +83,6 @@ TAG
         }
 
         return self::SUCCESS;
-    }
-
-    /**
-     * @param InputInterface  $input
-     * @param OutputInterface $output
-     * @return array
-     * @throws Exception
-     */
-    protected function resolveOptions(InputInterface $input, OutputInterface $output): array
-    {
-        $options = parent::resolveOptions($input, $output);
-        if (!in_array($options['format'], $this->formats)) {
-            throw new Exception('--format must be one of: ' . implode(',', $this->formats));
-        }
-
-        return $options;
     }
 
     /**

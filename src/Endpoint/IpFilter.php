@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace Myracloud\WebApi\Endpoint;
 
 
-use DateTime;
-use Exception;
+use DateTimeInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
+use Myracloud\WebApi\Endpoint\Enum\IPFilterEnum;
 
 /**
  * Class IpFilter
@@ -23,19 +23,17 @@ class IpFilter extends AbstractEndpoint
 
     /**
      * @param string $domain
-     * @param string $type
+     * @param IPFilterEnum $type
      * @param string $value
      * @param bool $enabled
      * @return mixed
      * @throws GuzzleException
-     * @throws Exception
      */
-    public function create(string $domain, string $type, string $value, bool $enabled = true): array
+    public function create(string $domain, IPFilterEnum $type, string $value, bool $enabled = true): array
     {
-        $this->validateIpfilterType($type);
         $options[RequestOptions::JSON] =
             [
-                'type'    => $type,
+                'type'    => $type->value,
                 'value'   => $value,
                 'enabled' => $enabled,
             ];
@@ -46,21 +44,19 @@ class IpFilter extends AbstractEndpoint
     /**
      * @param string $domain
      * @param string $id
-     * @param DateTime $modified
-     * @param string $type
+     * @param DateTimeInterface $modified
+     * @param IPFilterEnum $type
      * @param string $value
      * @return array
      * @throws GuzzleException
-     * @throws Exception
      */
-    public function update(string $domain, string $id, DateTime $modified, string $type, string $value): array
+    public function update(string $domain, string $id, DateTimeInterface $modified, IPFilterEnum $type, string $value): array
     {
-        $this->validateIpfilterType($type);
         $options[RequestOptions::JSON] =
             [
                 'id'       => $id,
-                'modified' => $modified->format('c'),
-                'type'     => $type,
+                'modified' => $modified->format(DATE_RFC3339),
+                'type'     => $type->value,
                 'value'    => $value,
             ];
         return $this->handleResponse(

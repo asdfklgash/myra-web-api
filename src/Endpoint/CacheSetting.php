@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
-use DateTime;
-use Exception;
+use DateTimeInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
+use Myracloud\WebApi\Endpoint\Enum\MatchEnum;
 
 /**
  * Class CacheSetting
@@ -21,20 +21,18 @@ class CacheSetting extends AbstractEndpoint
      * @param string $domain
      * @param string $path
      * @param int $ttl
-     * @param string $type
+     * @param MatchEnum $type
      * @param bool $enabled
      * @return array
      * @throws GuzzleException
-     * @throws Exception
      */
-    public function create(string $domain, string $path, int $ttl, string $type = self::MATCHING_TYPE_PREFIX, bool $enabled = true): array
+    public function create(string $domain, string $path, int $ttl, MatchEnum $type = MatchEnum::Prefix, bool $enabled = true): array
     {
-        $this->validateMatchingType($type);
         $options[RequestOptions::JSON] =
             [
                 "path"    => $path,
                 "ttl"     => $ttl,
-                "type"    => $type,
+                "type"    => $type->value,
                 "enabled" => $enabled,
             ];
         return $this->handleResponse(
@@ -45,25 +43,23 @@ class CacheSetting extends AbstractEndpoint
     /**
      * @param string $domain
      * @param string $id
-     * @param DateTime $modified
+     * @param DateTimeInterface $modified
      * @param string $path
      * @param int $ttl
-     * @param string $type
+     * @param MatchEnum $type
      * @param bool $enabled
      * @return array
      * @throws GuzzleException
-     * @throws Exception
      */
-    public function update(string $domain, string $id, DateTime $modified, string $path, int $ttl, string $type = self::MATCHING_TYPE_PREFIX, bool $enabled = true): array
+    public function update(string $domain, string $id, DateTimeInterface $modified, string $path, int $ttl, MatchEnum $type = MatchEnum::Prefix, bool $enabled = true): array
     {
-        $this->validateMatchingType($type);
         $options[RequestOptions::JSON] =
             [
                 "id"       => $id,
-                'modified' => $modified->format('c'),
+                'modified' => $modified->format(DATE_RFC3339),
                 "path"     => $path,
                 "ttl"      => $ttl,
-                "type"     => $type,
+                "type"     => $type->value,
                 "enabled"  => $enabled,
             ];
         return $this->handleResponse(

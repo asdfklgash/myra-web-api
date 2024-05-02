@@ -43,8 +43,8 @@ class StatisticTest extends AbstractEndpointTest
                     ],
                 ]
                 ,
-                'startDate' => $startDate->format('c'),
-                'endDate' => $endDate->format('c'),
+                'startDate' => $startDate->format(DATE_RFC3339),
+                'endDate' => $endDate->format(DATE_RFC3339),
                 'fqdn' => [
                     "ALL:" . self::TESTDOMAIN,
                 ],

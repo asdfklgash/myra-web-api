@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
-use DateTime;
-use Exception;
+use DateTimeInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
+use Myracloud\WebApi\Endpoint\Enum\DNSEnum;
 
 /**
  * Class DnsRecord
@@ -21,22 +21,20 @@ class DnsRecord extends AbstractEndpoint
      * @param ?string $domain
      * @param int $page
      * @param string|null $search
-     * @param string|null $recordType
+     * @param DNSEnum|null $recordType
      * @param bool $activeOnly
      * @param bool $loadBalancedOnly
      * @return mixed
      * @throws GuzzleException
-     * @throws Exception
      */
-    public function getList(?string $domain = null, int $page = 1, ?string $search = null, ?string $recordType = null, bool $activeOnly = false, bool $loadBalancedOnly = false): array
+    public function getList(?string $domain = null, int $page = 1, ?string $search = null, ?DNSEnum $recordType = null, bool $activeOnly = false, bool $loadBalancedOnly = false): array
     {
         $options = [];
         if (!empty($search)) {
             $options[RequestOptions::QUERY]['search'] = $search;
         }
-        if (!empty($recordType)) {
-            $this->validateDnsType($recordType);
-            $options[RequestOptions::QUERY]['recordTypes'] = $recordType;
+        if ($recordType !== null) {
+            $options[RequestOptions::QUERY]['recordTypes'] = $recordType->value;
         }
         if ($activeOnly) {
             $options[RequestOptions::QUERY]['activeOnly'] = 'true';
@@ -55,23 +53,21 @@ class DnsRecord extends AbstractEndpoint
      * @param string $subdomain
      * @param string $ipAddress
      * @param int $ttl
-     * @param string $recordType
+     * @param DNSEnum $recordType
      * @param bool $active
      * @param string $sslCertTemplate
      * @param bool $enabled
      * @return mixed
      * @throws GuzzleException
-     * @throws Exception
      */
-    public function create(string $domain, string $subdomain, string $ipAddress, int $ttl, string $recordType = self::DNS_TYPE_A, bool $active = true, string $sslCertTemplate = '', bool $enabled = true): array
+    public function create(string $domain, string $subdomain, string $ipAddress, int $ttl, DNSEnum $recordType = DNSEnum::A, bool $active = true, string $sslCertTemplate = '', bool $enabled = true): array
     {
-        $this->validateDnsType($recordType);
         $options[RequestOptions::JSON] =
             [
                 'name'       => $subdomain,
                 'value'      => $ipAddress,
                 'ttl'        => $ttl,
-                'recordType' => $recordType,
+                'recordType' => $recordType->value,
                 'active'     => $active,
                 'enabled'    => $enabled,
             ];
@@ -87,29 +83,27 @@ class DnsRecord extends AbstractEndpoint
     /**
      * @param string $domain
      * @param string $id
-     * @param DateTime $modified
+     * @param DateTimeInterface $modified
      * @param string $subdomain
      * @param string $ipAddress
      * @param int $ttl
-     * @param string $recordType
+     * @param DNSEnum $recordType
      * @param bool $active
      * @param string $sslCertTemplate
      * @param bool $enabled
      * @return array
      * @throws GuzzleException
-     * @throws Exception
      */
-    public function update(string $domain, string $id, DateTime $modified, string $subdomain, string $ipAddress, int $ttl, string $recordType = self::DNS_TYPE_A, bool $active = true, string $sslCertTemplate = '', bool $enabled = true): array
+    public function update(string $domain, string $id, DateTimeInterface $modified, string $subdomain, string $ipAddress, int $ttl, DNSEnum $recordType = DNSEnum::A, bool $active = true, string $sslCertTemplate = '', bool $enabled = true): array
     {
-        $this->validateDnsType($recordType);
         $options[RequestOptions::JSON] =
             [
                 "id"         => $id,
-                'modified'   => $modified->format('c'),
+                'modified'   => $modified->format(DATE_RFC3339),
                 'name'       => $subdomain,
                 'value'      => $ipAddress,
                 'ttl'        => $ttl,
-                'recordType' => $recordType,
+                'recordType' => $recordType->value,
                 'active'     => $active,
                 'enabled'    => $enabled,
             ];

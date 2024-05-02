@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Command;
 
-use Exception;
 use GuzzleHttp\Exception\TransferException;
 use Myracloud\WebApi\Endpoint\AbstractEndpoint;
+use Myracloud\WebApi\Exception\CommandException;
 use Myracloud\WebApi\WebApi;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -56,13 +56,13 @@ abstract class AbstractCommand extends Command
      * @param InputInterface  $input
      * @param OutputInterface $output
      * @return array
-     * @throws Exception
+     * @throws CommandException
      */
     protected function resolveOptions(InputInterface $input, OutputInterface $output): array
     {
         $options = array_merge($input->getArguments(), $input->getOptions());
         if (empty($options['apiKey']) || empty($options['secret'])) {
-            throw new Exception('apiKey and secret have to be provided either by parameter or config file.');
+            throw new CommandException('apiKey and secret have to be provided either by parameter or config file.');
         }
         $this->webapi ??= new WebApi($options['apiKey'], $options['secret'], $options['endpoint']);
 

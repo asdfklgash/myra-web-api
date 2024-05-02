@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace Myracloud\WebApi\Command;
 
 
-use DateTime;
+use DateTimeImmutable;
 use Exception;
 use GuzzleHttp\Exception\GuzzleException;
-use Myracloud\WebApi\Endpoint\AbstractEndpoint;
+use Myracloud\WebApi\Endpoint\Enum\IPFilterEnum;
 use Myracloud\WebApi\Endpoint\IpFilter;
 use RuntimeException;
 use Symfony\Component\Console\Helper\Table;
@@ -21,18 +21,11 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class IpfilterCommand extends AbstractCrudCommand
 {
-    static array $filterType = [
-        AbstractEndpoint::IPFILTER_TYPE_WHITELIST,
-        AbstractEndpoint::IPFILTER_TYPE_BLACKLIST,
-        'wl',
-        'bl',
-    ];
-
     protected function configure(): void
     {
         $this->setName('myracloud:api:ipfilter');
         $this->addOption('value', null, InputOption::VALUE_REQUIRED, 'Filter pattern', null);
-        $this->addOption('type', 't', InputOption::VALUE_REQUIRED, 'Matching type', AbstractEndpoint::IPFILTER_TYPE_BLACKLIST);
+        $this->addOption('type', 't', InputOption::VALUE_REQUIRED, 'Matching type', IPFilterEnum::Blacklist->value);
 
         $this->setDescription('Domain commands allow you to edit Ip based filters.');
 
@@ -69,23 +62,15 @@ TAG
         if (empty($options['value'])) {
             throw new RuntimeException('You need to define a filter pattern via --value');
         }
-        if (empty($options['type'])) {
-            throw new RuntimeException('You need to define Matching type via --type');
-        } elseif (!in_array($options['type'], self::$filterType)) {
-            throw new RuntimeException('--type has to be one of ' . implode(',', self::$filterType));
-        }
-
-        if ($options['type'] == 'wl') {
-            $options['type'] = AbstractEndpoint::IPFILTER_TYPE_WHITELIST;
-        }
-        if ($options['type'] == 'bl') {
-            $options['type'] = AbstractEndpoint::IPFILTER_TYPE_BLACKLIST;
+        $type = IPFilterEnum::tryFrom($options['type']??'');
+        if (!$type) {
+            throw new RuntimeException('--type has to be one of ' . implode(',', IPFilterEnum::values()));
         }
 
         $endpoint = $this->getEndpoint();
         $return = $endpoint->create(
             $options['fqdn'],
-            $options['type'],
+            $type->realType(),
             $options['value']
         );
         $this->handleTableReturn($return, $output);
@@ -114,12 +99,12 @@ TAG
 
         foreach ($data as $item) {
             $table->addRow([
-                array_key_exists('id', $item) ? $item['id'] : null,
+                $item['id']??null,
                 $item['created'],
                 $item['modified'],
                 $item['value'],
-                @$item['type'],
-                $item['enabled'] ?: 0,
+                IPFilterEnum::tryFrom($item['type'])?->value,
+                ($item['enabled'] ?? false) ? 'true' : 'false',
             ]);
         }
         $table->render();
@@ -128,7 +113,7 @@ TAG
     /**
      * @param array           $options
      * @param OutputInterface $output
-     * @throws Exception
+     * @throws Exception|GuzzleException
      */
     protected function OpUpdate(array $options, OutputInterface $output): void
     {
@@ -138,24 +123,17 @@ TAG
         if (empty($options['value'])) {
             $options['value'] = $existing['value'];
         }
-        if (empty($options['type'])) {
-            throw new RuntimeException('You need to define Matching type via --type');
-        }
-        if ($options['type'] == 'wl') {
-            $options['type'] = $existing['type'];
-        }
-        if ($options['type'] == 'bl') {
-            $options['type'] = AbstractEndpoint::IPFILTER_TYPE_BLACKLIST;
-        }
-        if (!in_array($options['type'], self::$filterType)) {
-            throw new RuntimeException('--type has to be one of ' . implode(',', self::$filterType));
+
+        $type = IPFilterEnum::tryFrom($options['type']??'');
+        if (!$type) {
+            throw new RuntimeException('--type has to be one of ' . implode(',', IPFilterEnum::values()));
         }
 
         $return = $endpoint->update(
             $options['fqdn'],
             $options['id'],
-            new DateTime($existing['modified']),
-            $options['type'],
+            new DateTimeImmutable($existing['modified']),
+            $type,
             $options['value']
         );
         $this->handleTableReturn($return, $output);

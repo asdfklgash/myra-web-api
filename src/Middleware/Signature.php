@@ -24,8 +24,8 @@ class Signature
      * @param string $apiKey
      */
     public function __construct(
-        private string $secret,
-        private string $apiKey
+        private readonly string $secret,
+        private readonly string $apiKey
     ) {
         $this->date = trim(date(DATE_RFC3339));
     }

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
-use DateTime;
+use DateTimeInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
@@ -48,17 +48,17 @@ class Domain extends AbstractEndpoint
     /**
      * @param string $domain
      * @param string $id
-     * @param DateTime $modified
+     * @param DateTimeInterface $modified
      * @return array
      * @throws GuzzleException
      */
-    public function delete(string $domain, string $id, DateTime $modified): array
+    public function delete(string $domain, string $id, DateTimeInterface $modified): array
     {
         $options[RequestOptions::JSON] =
             [
                 'name'     => $domain,
                 'id'       => $id,
-                'modified' => $modified->format('c'),
+                'modified' => $modified->format(DATE_RFC3339),
             ];
 
         return $this->handleResponse(
@@ -68,17 +68,17 @@ class Domain extends AbstractEndpoint
 
     /**
      * @param string $id
-     * @param DateTime $modified
+     * @param DateTimeInterface $modified
      * @param bool $autoUpdate
      * @return array
      * @throws GuzzleException
      */
-    public function update(string $id, DateTime $modified, bool $autoUpdate = false): array
+    public function update(string $id, DateTimeInterface $modified, bool $autoUpdate = false): array
     {
         $options[RequestOptions::JSON] =
             [
                 'id'         => $id,
-                'modified'   => $modified->format('c'),
+                'modified'   => $modified->format(DATE_RFC3339),
                 'autoUpdate' => $autoUpdate,
             ];
         return $this->handleResponse(

@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
-use DateTime;
-use Exception;
+use DateTimeInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
+use Myracloud\WebApi\Endpoint\Enum\MatchEnum;
+use Myracloud\WebApi\Endpoint\Enum\RedirectEnum;
 
 /**
  * Class Redirect
@@ -24,23 +25,20 @@ class Redirect extends AbstractEndpoint
      * @param string $domain
      * @param string $source
      * @param string $destination
-     * @param string $type
-     * @param string $matchingType
+     * @param RedirectEnum $type
+     * @param MatchEnum $matchingType
      * @param bool $expertMode
      * @return array
      * @throws GuzzleException
-     * @throws Exception
      */
-    public function create(string $domain, string $source, string $destination, string $type = self::REDIRECT_TYPE_REDIRECT, string $matchingType = self::MATCHING_TYPE_PREFIX, bool $expertMode = false): array
+    public function create(string $domain, string $source, string $destination, RedirectEnum $type = RedirectEnum::Redirect, MatchEnum $matchingType = MatchEnum::Prefix, bool $expertMode = false): array
     {
-        $this->validateRedirectType($type);
-        $this->validateMatchingType($matchingType);
         $options[RequestOptions::JSON] =
             [
                 "source"       => $source,
                 "destination"  => $destination,
-                "type"         => $type,
-                "matchingType" => $matchingType,
+                "type"         => $type->value,
+                "matchingType" => $matchingType->value,
                 "expertMode"   => $expertMode,
             ];
         return $this->handleResponse($this->client->request('PUT', static::ENDPOINT . '/' . $domain, $options));
@@ -49,28 +47,25 @@ class Redirect extends AbstractEndpoint
     /**
      * @param string $domain
      * @param string $id
-     * @param DateTime $modified
+     * @param DateTimeInterface $modified
      * @param string $source
      * @param string $destination
-     * @param string $type
-     * @param string $matchingType
+     * @param RedirectEnum $type
+     * @param MatchEnum $matchingType
      * @param bool $expertMode
      * @return array
      * @throws GuzzleException
-     * @throws Exception
      */
-    public function update(string $domain, string $id, DateTime $modified, string $source, string $destination, string $type = self::REDIRECT_TYPE_REDIRECT, string $matchingType = self::MATCHING_TYPE_PREFIX, bool $expertMode = false): array
+    public function update(string $domain, string $id, DateTimeInterface $modified, string $source, string $destination, RedirectEnum $type = RedirectEnum::Redirect, MatchEnum $matchingType = MatchEnum::Prefix, bool $expertMode = false): array
     {
-        $this->validateRedirectType($type);
-        $this->validateMatchingType($matchingType);
         $options[RequestOptions::JSON] =
             [
                 "id"           => $id,
-                'modified'     => $modified->format('c'),
+                'modified'     => $modified->format(DATE_RFC3339),
                 "source"       => $source,
                 "destination"  => $destination,
-                "type"         => $type,
-                "matchingType" => $matchingType,
+                "type"         => $type->value,
+                "matchingType" => $matchingType->value,
                 "expertMode"   => $expertMode,
             ];
         return $this->handleResponse(

@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Command;
 
-use DateTime;
+use DateTimeImmutable;
 use GuzzleHttp\Exception\GuzzleException;
-use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\Endpoint\Maintenance;
 use RuntimeException;
 use Symfony\Component\Console\Helper\Table;
@@ -66,15 +65,14 @@ EOF
         if (empty($options['start'])) {
             throw new RuntimeException('You need to define a Start time via --start');
         } else {
-            $start = new DateTime($options['start']);
+            $start = new DateTimeImmutable($options['start']);
         }
         if (empty($options['end'])) {
             throw new RuntimeException('You need to define a End time via --end');
         } else {
-            $end = new DateTime($options['end']);
+            $end = new DateTimeImmutable($options['end']);
         }
-        $endpoint = $this->getEndpoint();
-        $return   = $endpoint->create($options['fqdn'], $start, $end, file_get_contents($options['contentFile']));
+        $return   = $this->getEndpoint()->create($options['fqdn'], $start, $end, file_get_contents($options['contentFile']));
         $this->handleTableReturn($return, $output);
     }
 
@@ -94,13 +92,13 @@ EOF
 
         foreach ($data as $item) {
             $table->addRow([
-                array_key_exists('id', $item) ? $item['id'] : null,
+                $item['id']??null,
                 $item['created'],
                 $item['modified'],
                 $item['fqdn'],
                 $item['start'],
                 $item['end'],
-                $item['active'] ?: 0,
+                ($item['active'] ?? false)  ? 'true' : 'false',
             ]);
         }
         $table->render();
@@ -114,20 +112,9 @@ EOF
      */
     protected function OpUpdate(array $options, OutputInterface $output): void
     {
-        /**@var $endpoint Maintenance */
-
         $existing = $this->findById($options);
-
-        if (empty($options['start'])) {
-            $startDate = new DateTime($existing['start']);
-        } else {
-            $startDate = new DateTime($options['start']);
-        }
-        if (empty($options['end'])) {
-            $endDate = new DateTime($existing['end']);
-        } else {
-            $endDate = new DateTime($options['end']);
-        }
+        $startDate = new DateTimeImmutable($options['start']??$existing['start']??'now');
+        $endDate = new DateTimeImmutable($options['end']??$existing['end']??'now');
 
         if (empty($options['contentFile'])) {
             $content = $existing['content'];
@@ -137,11 +124,10 @@ EOF
             $content = file_get_contents($options['contentFile']);
         }
 
-        $endpoint = $this->getEndpoint();
-        $return   = $endpoint->update(
+        $return = $this->getEndpoint()->update(
             $options['fqdn'],
             $existing['id'],
-            new DateTime($existing['modified']),
+            new DateTimeImmutable($existing['modified']),
             $startDate,
             $endDate,
             $content

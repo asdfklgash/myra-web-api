@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
-
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
-use DateTime;
+use DateTimeInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
@@ -22,19 +22,19 @@ class Maintenance extends AbstractEndpoint
 
     /**
      * @param string $domain
-     * @param DateTime $startDate
-     * @param DateTime $endDate
+     * @param DateTimeInterface $startDate
+     * @param DateTimeInterface $endDate
      * @param string|null $content
      * @return mixed
      * @throws GuzzleException
      */
-    public function create(string$domain, DateTime $startDate, DateTime $endDate, ?string $content = null): array
+    public function create(string$domain, DateTimeInterface $startDate, DateTimeInterface $endDate, ?string $content = null): array
     {
         $options[RequestOptions::JSON] =
             [
                 'content' => $content,
-                'start'   => $startDate->format('c'),
-                'end'     => $endDate->format('c'),
+                'start'   => $startDate->format(DATE_RFC3339),
+                'end'     => $endDate->format(DATE_RFC3339),
             ];
         return $this->handleResponse(
             $this->client->request('PUT', static::ENDPOINT . '/' . $domain, $options)
@@ -43,8 +43,8 @@ class Maintenance extends AbstractEndpoint
 
     /**
      * @param string $domain
-     * @param DateTime $startDate
-     * @param DateTime $endDate
+     * @param DateTimeInterface $startDate
+     * @param DateTimeInterface $endDate
      * @param string $customLabel
      * @param string $customUrl
      * @param string $facebookUrl
@@ -52,7 +52,7 @@ class Maintenance extends AbstractEndpoint
      * @return array
      * @throws GuzzleException
      */
-    public function createDefaultPage(string $domain, DateTime $startDate, DateTime $endDate, string $customLabel = '', string $customUrl = '', string $facebookUrl = '', string $twitterUrl = ''): array
+    public function createDefaultPage(string $domain, DateTimeInterface $startDate, DateTimeInterface $endDate, string $customLabel = '', string $customUrl = '', string $facebookUrl = '', string $twitterUrl = ''): array
     {
         $pageData = [];
         if ($facebookUrl !== '') {
@@ -70,8 +70,8 @@ class Maintenance extends AbstractEndpoint
 
         $options[RequestOptions::JSON] =
             [
-                'start'       => $startDate->format('c'),
-                'end'         => $endDate->format('c'),
+                'start'       => $startDate->format(DATE_RFC3339),
+                'end'         => $endDate->format(DATE_RFC3339),
                 'defaultPage' => $pageData,
             ];
 
@@ -83,22 +83,22 @@ class Maintenance extends AbstractEndpoint
     /**
      * @param string $domain
      * @param string $id
-     * @param DateTime $modified
-     * @param DateTime $startDate
-     * @param DateTime $endDate
+     * @param DateTimeInterface $modified
+     * @param DateTimeInterface $startDate
+     * @param DateTimeInterface $endDate
      * @param string|null $content
      * @return array
      * @throws GuzzleException
      */
-    public function update(string $domain, string $id, DateTime $modified, DateTime $startDate, DateTime $endDate, ?string $content = null): array
+    public function update(string $domain, string $id, DateTimeInterface $modified, DateTimeInterface $startDate, DateTimeInterface $endDate, ?string $content = null): array
     {
         $options[RequestOptions::JSON] =
             [
                 'id'       => $id,
-                'modified' => $modified->format('c'),
+                'modified' => $modified->format(DATE_RFC3339),
                 'content'  => $content,
-                'start'    => $startDate->format('c'),
-                'end'      => $endDate->format('c'),
+                'start'    => $startDate->format(DATE_RFC3339),
+                'end'      => $endDate->format(DATE_RFC3339),
             ];
         return $this->handleResponse(
             $this->client->request('POST', static::ENDPOINT . '/' . $domain, $options)

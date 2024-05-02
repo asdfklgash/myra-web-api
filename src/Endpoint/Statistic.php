@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Endpoint;
 
-use DateTime;
-use Exception;
+use DateTimeInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
+use Myracloud\WebApi\Exception\EndpointException;
 
 /**
  * Class Statistic
@@ -23,13 +23,13 @@ class Statistic extends AbstractEndpoint
     /**
      * @param string $domain
      * @param string $id
-     * @param DateTime $modified
+     * @param DateTimeInterface $modified
      * @return array
-     * @throws Exception
+     * @throws EndpointException
      */
-    public function delete(string $domain, string $id, DateTime $modified): array
+    public function delete(string $domain, string $id, DateTimeInterface $modified): array
     {
-        throw new Exception('Delete is not supported on ' . __CLASS__);
+        throw new EndpointException('Delete is not supported on ' . __CLASS__);
     }
 
     /**

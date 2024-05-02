@@ -19,7 +19,6 @@ use Myracloud\WebApi\Endpoint\Redirect;
 use Myracloud\WebApi\Endpoint\Statistic;
 use Myracloud\WebApi\Endpoint\SubdomainSetting;
 use Myracloud\WebApi\Middleware\Signature;
-use Psr\Http\Message\RequestInterface;
 
 /**
  * Class WebApi

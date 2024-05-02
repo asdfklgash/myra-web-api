@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Command;
 
-use DateTime;
+use DateTimeImmutable;
 use GuzzleHttp\Exception\GuzzleException;
-use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\Endpoint\CacheSetting;
+use Myracloud\WebApi\Endpoint\Enum\MatchEnum;
 use RuntimeException;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputOption;
@@ -19,13 +19,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class CacheSettingCommand extends AbstractCrudCommand
 {
-
-    static array $matchingTypes = [
-        AbstractEndpoint::MATCHING_TYPE_PREFIX,
-        AbstractEndpoint::MATCHING_TYPE_EXACT,
-        AbstractEndpoint::MATCHING_TYPE_SUFFIX,
-    ];
-
     /**
      *
      */
@@ -34,7 +27,7 @@ class CacheSettingCommand extends AbstractCrudCommand
         $this->setName('myracloud:api:cacheSetting');
         $this->addOption('path', 'p', InputOption::VALUE_REQUIRED, 'Path to match against', null);
         $this->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'time to live', null);
-        $this->addOption('type', null, InputOption::VALUE_REQUIRED, 'Type of match (' . implode(',', self::$matchingTypes) . ')', null);
+        $this->addOption('type', null, InputOption::VALUE_REQUIRED, 'Type of match (' . implode(',', MatchEnum::values()) . ')', null);
         $this->setDescription('CacheSetting allows you to define/modify Cache rules.');
         $this->setHelp(<<<'TAG'
 Only passing fqdn without additional options will display all known settings.
@@ -67,13 +60,11 @@ TAG
         if (empty($options['ttl'])) {
             throw new RuntimeException('You need to define a time to live via --ttl');
         }
-        if (empty($options['type'])) {
-            throw new RuntimeException('You need to define Matching type via --type');
-        } elseif (!in_array($options['type'], self::$matchingTypes)) {
-            throw new RuntimeException('--type has to be one of ' . implode(',', self::$matchingTypes));
+        $type = MatchEnum::tryFrom($options['type']??'');
+        if (!$type) {
+            throw new RuntimeException('--type has to be one of ' . implode(',', MatchEnum::values()));
         }
-        $endpoint = $this->getEndpoint();
-        $return   = $endpoint->create($options['fqdn'], $options['path'], $options['ttl'], $options['type']);
+        $return   = $this->getEndpoint()->create($options['fqdn'], $options['path'], $options['ttl'], $type);
         $this->handleTableReturn($return, $output);
     }
 
@@ -96,14 +87,14 @@ TAG
 
         foreach ($data as $item) {
             $table->addRow([
-                array_key_exists('id', $item) ? $item['id'] : null,
+                $item['id'] ?? null,
                 $item['created'],
                 $item['modified'],
                 $item['path'],
                 $item['ttl'],
                 $item['notFoundTtl'],
                 $item['type'],
-                $item['enforce'] ?: 0,
+                ($item['enforce'] ?? false) ? 'true' : 'false',
                 $item['sort'],
             ]);
         }
@@ -118,9 +109,7 @@ TAG
      */
     protected function OpUpdate(array $options, OutputInterface $output): void
     {
-        $endpoint = $this->getEndpoint();
         $existing = $this->findById($options);
-
         if (empty($options['path'])) {
             $options['path'] = $existing['path'];
         }
@@ -128,14 +117,12 @@ TAG
             $options['ttl'] = $existing['ttl'];
         }
 
-        if (empty($options['type'])) {
-            $options['type'] = $existing['type'];
-        }
-        if (!in_array($options['type'], self::$matchingTypes)) {
-            throw new RuntimeException('--type has to be one of ' . implode(',', self::$matchingTypes));
+        $type = MatchEnum::tryFrom($options['type']??$existing['type']??'');
+        if (!$type) {
+            throw new RuntimeException('--type has to be one of ' . implode(',', MatchEnum::values()));
         }
 
-        $return = $endpoint->update($options['fqdn'], $existing['id'], new DateTime($existing['modified']), $options['path'], $options['ttl'], $options['type']);
+        $return = $this->getEndpoint()->update($options['fqdn'], $existing['id'], new DateTimeImmutable($existing['modified']), $options['path'], $options['ttl'], $type);
         $this->handleTableReturn($return, $output);
     }
 }

@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Myracloud\WebApi\Command;
 
-
-use DateTime;
+use DateTimeImmutable;
 use GuzzleHttp\Exception\GuzzleException;
+use Myracloud\WebApi\Command\Enum\ExecutionTypeEnum;
 use Myracloud\WebApi\Endpoint\Domain;
 use RuntimeException;
 use Symfony\Component\Console\Helper\Table;
@@ -19,11 +19,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class DomainCommand extends AbstractCrudCommand
 {
+    protected bool $fqdnOptional = true;
+
     protected function configure(): void
     {
         parent::configure();
         $this->setName('myracloud:api:domain');
-        $this->addOption('operation', 'o', InputOption::VALUE_REQUIRED, '', self::OPERATION_LIST);
+        $this->addOption('operation', 'o', InputOption::VALUE_REQUIRED, '', ExecutionTypeEnum::List->value);
         $this->addOption('id', null, InputOption::VALUE_REQUIRED, 'Id to Update/Delete');
 
         $this->addOption('autoupdate', null, InputOption::VALUE_REQUIRED, 'Auto update flag for the domain', null);
@@ -47,13 +49,14 @@ TAG
     }
 
     /**
-     * @param array           $options
+     * @param array $options
      * @param OutputInterface $output
+     * @return void
+     * @throws GuzzleException
      */
     protected function OpList(array $options, OutputInterface $output): void
     {
         $options['fqdn'] = null;
-
         parent::OpList($options, $output);
     }
 
@@ -65,16 +68,11 @@ TAG
      */
     protected function OpCreate(array $options, OutputInterface $output): void
     {
-        $endpoint = $this->getEndpoint();
-
         if ($options['name'] == null) {
             throw new RuntimeException('You need to define a domain name via --name');
         }
-        if ($options['autoupdate'] == null) {
-            $options['autoupdate'] = true;
-        }
-
-        $return = $endpoint->create(
+        $options['autoupdate'] ??= true;
+        $return = $this->getEndpoint()->create(
             $options['name'],
             boolval($options['autoupdate'])
 
@@ -112,16 +110,16 @@ TAG
 
         foreach ($data as $item) {
             $table->addRow([
-                array_key_exists('id', $item) ? $item['id'] : null,
-                @$item['created'],
-                @$item['modified'],
-                @$item['name'],
-                @$item['autoUpdate'] ?: 0,
-                @$item['maintenance'] ?: 0,
-                @$item['paused'] ?: 0,
-                @$item['owned'] ?: 0,
-                @$item['reversed'] ?: 0,
-                @$item['environment'],
+                $item['id'] ?? null,
+                $item['created'] ?? '',
+                $item['modified'] ?? '',
+                $item['name'] ?? '',
+                ($item['autoUpdate']  ?? false) ? 'true' : 'false',
+                ($item['maintenance'] ?? false) ? 'true' : 'false',
+                ($item['paused'] ?? false) ? 'true' : 'false',
+                ($item['owned'] ?? false) ? 'true' : 'false',
+                ($item['reversed'] ?? false) ? 'true' : 'false',
+                $item['environment']??'',
             ]);
         }
         $table->render();
@@ -136,16 +134,12 @@ TAG
     protected function OpUpdate(array $options, OutputInterface $output): void
     {
         $options['fqdn'] = null;
-        $endpoint = $this->getEndpoint();
         $existing = $this->findById($options);
-
-        if ($options['autoupdate'] == null) {
-            $options['autoupdate'] = $existing['autoUpdate'];
-        }
-        $return = $endpoint->update(
+        $options['autoupdate'] ??= $existing['autoUpdate'] ?? false;
+        $return = $this->getEndpoint()->update(
             $options['id'],
-            new DateTime($existing['modified']),
-            boolval($options['autoupdate'])
+            new DateTimeImmutable($existing['modified']),
+            (bool)($options['autoupdate'])
         );
 
         $this->handleTableReturn($return, $output);
@@ -163,9 +157,7 @@ TAG
             throw new RuntimeException('You need to define the id of the object to delete via --id');
         }
         $existing = $this->findById($options);
-
-        $endpoint = $this->getEndpoint();
-        $return   = $endpoint->delete($existing['name'], $options['id'], new DateTime($existing['modified']));
+        $return   = $this->getEndpoint()->delete($existing['name'], $options['id'], new DateTimeImmutable($existing['modified']));
         $this->handleDeleteReturn($return, $output);
     }
 }
