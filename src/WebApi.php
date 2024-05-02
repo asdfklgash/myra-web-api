@@ -65,6 +65,11 @@ class WebApi
             )
         );
 
+        if ($site === '')
+            $site = self::DEFAULT_API_DOMAIN;
+        if ($lang === '')
+            $lang = self::DEFAULT_API_LANG;
+
         $client = new Client(
             $connectionConfig + [
                 'base_uri' => 'https://' . $site . '/' . $lang . '/rapi/',
