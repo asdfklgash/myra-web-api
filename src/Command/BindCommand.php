@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\TransferException;
 use Myracloud\WebApi\Endpoint\AbstractEndpoint;
 use Myracloud\WebApi\Endpoint\CacheClear;
+use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -27,7 +28,7 @@ class BindCommand extends AbstractCrudCommand
         parent::configure();
         $this->setName('myracloud:api:bind');
         $this->addOption('raw', 'r', InputOption::VALUE_NONE, 'Get the raw bind zone');
-        $this->setDescription('CacheClear commands allows you to do a cache clear via Myra API.');
+        $this->setDescription('Bind commands allows you to fetch the DNS zone as text or JSON data via Myra API.');
         $this->setHelp(<<<'TAG'
 <fg=yellow>Example usage:</>
 bin/console myracloud:api:bind <fqdn>
@@ -71,6 +72,15 @@ TAG
 
         $this->checkResult($return, $output);
 
+        if($options['raw'])
+        {
+            $output->writeln($return);
+        }
+        else
+        {
+            $this->writeTable($return['list'][0]['records'], $output);
+        }
+
         return self::SUCCESS;
     }
 
@@ -88,6 +98,21 @@ TAG
      */
     protected function writeTable($data, OutputInterface $output): void
     {
+        $table = new Table($output);
+        $table->setHeaders(['domain', 'type', 'ttl', 'value', 'rtype', 'active', 'cnameAlt']);
+
+        foreach ($data as $item) {
+            $table->addRow([
+                               $item['domain'],
+                               $item['type'],
+                               $item['ttl'],
+                               $item['value'],
+                               $item['rtype'],
+                               ($item['active'] ?? false) ? 'true' : 'false',
+                               $item['cnameAlt'] ?? null,
+                           ]);
+        }
+        $table->render();
     }
 
     /**
