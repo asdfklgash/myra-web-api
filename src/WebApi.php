@@ -7,6 +7,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use Myracloud\WebApi\Endpoint\Bind;
+use Myracloud\WebApi\Endpoint\BindRaw;
 use Myracloud\WebApi\Endpoint\CacheClear;
 use Myracloud\WebApi\Endpoint\CacheSetting;
 use Myracloud\WebApi\Endpoint\Certificate;
@@ -143,4 +145,15 @@ class WebApi
     {
         return $this->getInstance(Networks::class);
     }
+
+    public function getBindRawEndpoint(): BindRaw
+    {
+        return $this->getInstance(BindRaw::class);
+    }
+
+    public function getBindEndpoint(): Bind
+    {
+        return $this->getInstance(Bind::class);
+    }
+
 }

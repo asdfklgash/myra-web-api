@@ -12,6 +12,7 @@ use Myracloud\WebApi\Command\MaintenanceCommand;
 use Myracloud\WebApi\Command\RedirectCommand;
 use Myracloud\WebApi\Command\SubdomainCommand;
 use Myracloud\WebApi\Command\WhitelistToolCommand;
+use Myracloud\WebApi\Command\BindCommand;
 use Symfony\Component\Console\Application;
 
 define('ROOTDIR', realpath(__DIR__ . DIRECTORY_SEPARATOR . '..'));
@@ -27,5 +28,6 @@ $application->addCommands([
     new RedirectCommand(),
     new SubdomainCommand(),
     new WhitelistToolCommand(),
+    new BindCommand(),
 ]);
 $application->run();
