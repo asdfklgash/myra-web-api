@@ -7,6 +7,8 @@ use Exception;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\TransferException;
 use Myracloud\WebApi\Endpoint\AbstractEndpoint;
+use Myracloud\WebApi\Endpoint\Bind;
+use Myracloud\WebApi\Endpoint\BindRaw;
 use Myracloud\WebApi\Endpoint\CacheClear;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
@@ -27,14 +29,15 @@ class BindCommand extends AbstractCrudCommand
     {
         parent::configure();
         $this->setName('myracloud:api:bind');
-        $this->addOption('raw', 'r', InputOption::VALUE_NONE, 'Get the raw bind zone');
+        $this->addOption('format', 'f', InputOption::VALUE_OPTIONAL, 'Format of returned data - json or as bind text file', 'json');
+        $this->addOption('raw', 'r', InputOption::VALUE_NONE, 'Get the raw output (text or json)');
         $this->setDescription('Bind commands allows you to fetch the DNS zone as text or JSON data via Myra API.');
         $this->setHelp(<<<'TAG'
 <fg=yellow>Example usage:</>
 bin/console myracloud:api:bind <fqdn>
 
 <fg=yellow>Example Get raw bind zone:</>
-bin/console myracloud:api:bind <fqdn> -r
+bin/console myracloud:api:bind <fqdn> --format raw
 TAG
         );
     }
@@ -50,13 +53,14 @@ TAG
         try {
 
             $options = $this->resolveOptions($input, $output);
-            /** @var CacheClear $endpoint */
-            if($options['raw'])
+            if($options['format'] == 'raw')
             {
+                /** @var BindRaw $endpoint */
                 $endpoint = $this->webapi->getBindRawEndpoint();
             }
             else
             {
+                /** @var Bind $endpoint */
                 $endpoint = $this->webapi->getBindEndpoint();
             }
             $return   = $endpoint->get($options['fqdn']);
@@ -72,13 +76,20 @@ TAG
 
         $this->checkResult($return, $output);
 
-        if($options['raw'])
+        switch($options['format'])
         {
-            $output->writeln($return);
-        }
-        else
-        {
-            $this->writeTable($return['list'][0]['records'], $output);
+            case 'raw':
+                $output->writeln($return);
+                break;
+            case 'json':
+                if($options['raw'])
+                {
+                    $output->writeln(json_encode($return['list'], JSON_PRETTY_PRINT));
+                }
+                else
+                {
+                    $this->writeTable($return['list'][0]['records'], $output);
+                }
         }
 
         return self::SUCCESS;

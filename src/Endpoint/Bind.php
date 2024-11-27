@@ -31,4 +31,18 @@ class Bind extends AbstractEndpoint
         );
     }
 
+
+    /**
+     * @param string $domain
+     * @return array
+     * @throws GuzzleException
+     */
+    public function getRaw(string $domain): string
+    {
+        return $this->handleRawResponse(
+            $this->client->request('GET', static::ENDPOINT . '/' . $domain)
+        );
+    }
+
+
 }

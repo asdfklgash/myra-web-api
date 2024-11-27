@@ -89,4 +89,19 @@ abstract class AbstractEndpoint
 
         return Utils::jsonDecode($response->getBody()->getContents(), true);
     }
+
+    /**
+     * @param ResponseInterface $response
+     * @return array
+     */
+    protected function handleRawResponse(ResponseInterface $response): string
+    {
+        if ($response->getStatusCode() != 200) {
+            throw new TransferException(
+                'Invalid Response. ' . $response->getStatusCode() . ' ' . $response->getReasonPhrase()
+            );
+        }
+
+        return $response->getBody()->getContents();
+    }
 }
